@@ -6,12 +6,15 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const { connectDb, isDbConnected } = require("./config/db");
-const courseRoutes = require("./routes/courseRoutes");
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const subjectRoutes = require("./routes/subjectRoutes");
+const resourceRoutes = require("./routes/resourceRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-// Middleware
+// Global Middleware
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "*",
@@ -26,10 +29,30 @@ app.get("/", (req, res) => {
   res.json({
     name: "Studex API",
     version: "1.0.0",
-    description: "API for Studex student learning & social platform",
+    description: "API for Studex Academic Workspace & Student Platform",
+    architecture: "Route -> Middleware -> Controller -> Model -> Database",
     endpoints: {
       health: "/api/health",
-      courses: "/api/courses",
+      auth: {
+        register: "POST /api/auth/register",
+        login: "POST /api/auth/login",
+        me: "GET /api/auth/me (Protected)",
+      },
+      users: {
+        getProfile: "GET /api/users/me (Protected)",
+        updateProfile: "PUT /api/users/me (Protected)",
+        uploadProfilePicture: "POST /api/users/profile-image (Protected, multipart/form-data)",
+      },
+      subjects: {
+        getAll: "GET /api/subjects (Protected)",
+        create: "POST /api/subjects (Protected)",
+        delete: "DELETE /api/subjects/:id (Protected)",
+      },
+      resources: {
+        getAll: "GET /api/resources (Protected, ?subject=&type=&search=)",
+        create: "POST /api/resources (Protected, multipart/form-data or link)",
+        delete: "DELETE /api/resources/:id (Protected)",
+      },
     },
   });
 });
@@ -45,8 +68,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// API Routes
-app.use("/api/courses", courseRoutes);
+// API Route Modules
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/resources", resourceRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
@@ -58,11 +84,13 @@ const startServer = () => {
   // Connect to DB asynchronously so HTTP routes respond immediately
   connectDb();
 
-  app.listen(PORT, () => {
+  return app.listen(PORT, () => {
     console.log(`🚀 Studex Server running on http://localhost:${PORT}`);
   });
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
