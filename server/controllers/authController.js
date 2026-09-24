@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
+const { getDefaultAvatarForGender } = require("../models/userModel");
+const Subject = require("../models/subjectModel");
 const asyncHandler = require("../middleware/asyncHandler");
 
 /**
@@ -23,7 +25,7 @@ const generateToken = (id) => {
  * @access  Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, gender, college, school, course, year, subjects } = req.body;
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -38,24 +40,69 @@ const registerUser = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Create user in database
+  // Normalize subjects array
+  let parsedSubjects = [];
+  if (Array.isArray(subjects)) {
+    parsedSubjects = subjects
+      .map((s) => (typeof s === "string" ? s.trim() : String(s).trim()))
+      .filter((s) => s.length > 0);
+  } else if (typeof subjects === "string" && subjects.trim()) {
+    parsedSubjects = subjects
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+
+  const collegeName = (college !== undefined ? college : school || "").trim();
+  const courseName = (course || "").trim();
+  const yearName = (year || "1st Year").trim();
+  const userGender = (gender || "other").toLowerCase().trim();
+  const defaultAvatar = getDefaultAvatarForGender(userGender);
+
+  // Create user in database with full profile details
   const user = await User.create({
-    name,
-    email,
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
     password: hashedPassword,
+    gender: userGender,
+    profilePicture: {
+      url: defaultAvatar,
+      public_id: "",
+    },
+    college: collegeName,
+    course: courseName,
+    year: yearName,
+    subjects: parsedSubjects,
   });
+
+  // Automatically create workspace Subject documents for entered subjects
+  if (parsedSubjects.length > 0) {
+    const defaultColors = ["#aa3bff", "#00d2ff", "#ff416c", "#10b981", "#f59e0b", "#8b5cf6"];
+    try {
+      const subjectDocs = parsedSubjects.map((subjName, idx) => ({
+        name: subjName,
+        code: subjName.slice(0, 4).toUpperCase(),
+        color: defaultColors[idx % defaultColors.length],
+        semester: yearName || "Semester 1",
+        user: user._id,
+      }));
+      await Subject.insertMany(subjectDocs);
+    } catch (err) {
+      console.error("Note: Initial subject creation skipped:", err.message);
+    }
+  }
 
   // Generate JWT token
   const token = generateToken(user._id);
 
+  // Omit password from response
+  const userObj = user.toObject();
+  delete userObj.password;
+
   res.status(201).json({
     success: true,
     message: "User registered successfully",
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    },
+    data: userObj,
     token,
   });
 });
@@ -89,14 +136,14 @@ const loginUser = asyncHandler(async (req, res) => {
   // Generate JWT token
   const token = generateToken(user._id);
 
+  // Omit password from response
+  const userObj = user.toObject();
+  delete userObj.password;
+
   res.status(200).json({
     success: true,
     message: "Logged in successfully",
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-    },
+    data: userObj,
     token,
   });
 });

@@ -3,6 +3,8 @@ import "./App.css";
 import AuthModal from "./components/AuthModal";
 import ProfileModal from "./components/ProfileModal";
 import AcademicWorkspace from "./components/AcademicWorkspace";
+import TaskEngine from "./components/TaskEngine";
+import StudyEngine from "./components/StudyEngine";
 
 const API_BASE = "http://localhost:5000";
 
@@ -27,11 +29,15 @@ function App() {
     name: "",
     email: "",
     password: "",
+    gender: "male",
     college: "",
     course: "",
     year: "1st Year",
     subjects: "",
   });
+
+  // Active Main Navigation Tab
+  const [activeTab, setActiveTab] = useState("workspace"); // 'workspace', 'tasks', 'study'
 
   // Profile Modal State
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -114,6 +120,7 @@ function App() {
             name: authFormData.name,
             email: authFormData.email,
             password: authFormData.password,
+            gender: authFormData.gender,
             college: authFormData.college,
             course: authFormData.course,
             year: authFormData.year,
@@ -154,9 +161,17 @@ function App() {
     setActionFeedback("You have been logged out. Please sign in to continue.");
   };
 
+  const defaultGenderAvatars = {
+    male: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png",
+    female: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png",
+    other: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png",
+    prefer_not_to_say: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-2.png",
+  };
+
   const avatarUrl =
     currentUser?.profilePicture?.url ||
-    "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png";
+    defaultGenderAvatars[currentUser?.gender] ||
+    defaultGenderAvatars.other;
 
   if (authChecking) {
     return (
@@ -296,19 +311,53 @@ function App() {
 
               <form onSubmit={handleAuthSubmit} className="auth-form">
                 {authMode === "register" && (
-                  <div className="form-group">
-                    <label htmlFor="gate-name">Full Name *</label>
-                    <input
-                      id="gate-name"
-                      type="text"
-                      placeholder="e.g. Maya Lin"
-                      value={authFormData.name}
-                      onChange={(e) =>
-                        setAuthFormData({ ...authFormData, name: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", padding: "0.75rem", background: "rgba(170, 59, 255, 0.08)", borderRadius: "10px", border: "1px solid rgba(170, 59, 255, 0.2)" }}>
+                      <img
+                        src={defaultGenderAvatars[authFormData.gender] || defaultGenderAvatars.other}
+                        alt="Default Avatar"
+                        style={{ width: "52px", height: "52px", borderRadius: "50%", border: "2px solid #aa3bff", objectFit: "cover" }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: "0.9rem", color: "#f3f4f6" }}>Default Student Avatar</strong>
+                        <p style={{ margin: 0, fontSize: "0.78rem", color: "#9ca3af" }}>
+                          Generated automatically for your profile based on gender.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label htmlFor="gate-name">Full Name *</label>
+                        <input
+                          id="gate-name"
+                          type="text"
+                          placeholder="e.g. Maya Lin"
+                          value={authFormData.name}
+                          onChange={(e) =>
+                            setAuthFormData({ ...authFormData, name: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="gate-gender">Gender *</label>
+                        <select
+                          id="gate-gender"
+                          value={authFormData.gender}
+                          onChange={(e) =>
+                            setAuthFormData({ ...authFormData, gender: e.target.value })
+                          }
+                        >
+                          <option value="male">👨 Male</option>
+                          <option value="female">👩 Female</option>
+                          <option value="other">🧑 Other / Non-Binary</option>
+                          <option value="prefer_not_to_say">🤐 Prefer not to say</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div className="form-group">
@@ -477,13 +526,57 @@ function App() {
               </div>
             </section>
 
-            {/* Academic Workspace: Subjects + Resources */}
-            <AcademicWorkspace
-              token={token}
-              apiBase={API_BASE}
-              onError={(msg) => setActionFeedback(`Error: ${msg}`)}
-              onFeedback={(msg) => setActionFeedback(msg)}
-            />
+            {/* Navigation Tabs for Studex Features */}
+            <div className="main-nav-tabs">
+              <button
+                className={`main-nav-tab ${activeTab === "workspace" ? "active" : ""}`}
+                onClick={() => setActiveTab("workspace")}
+              >
+                📚 Academic Workspace
+              </button>
+              <button
+                className={`main-nav-tab ${activeTab === "tasks" ? "active" : ""}`}
+                onClick={() => setActiveTab("tasks")}
+              >
+                📋 Student Task Engine
+              </button>
+              <button
+                className={`main-nav-tab ${activeTab === "study" ? "active" : ""}`}
+                onClick={() => setActiveTab("study")}
+              >
+                ⏱️ Focus Study Engine
+              </button>
+            </div>
+
+            {/* Tab 1: Academic Workspace (Subjects + Resources) */}
+            {activeTab === "workspace" && (
+              <AcademicWorkspace
+                token={token}
+                apiBase={API_BASE}
+                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                onFeedback={(msg) => setActionFeedback(msg)}
+              />
+            )}
+
+            {/* Tab 2: Student Task Engine */}
+            {activeTab === "tasks" && (
+              <TaskEngine
+                token={token}
+                apiBase={API_BASE}
+                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                onFeedback={(msg) => setActionFeedback(msg)}
+              />
+            )}
+
+            {/* Tab 3: Study Engine & Focus Analytics */}
+            {activeTab === "study" && (
+              <StudyEngine
+                token={token}
+                apiBase={API_BASE}
+                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                onFeedback={(msg) => setActionFeedback(msg)}
+              />
+            )}
           </>
         )}
       </main>

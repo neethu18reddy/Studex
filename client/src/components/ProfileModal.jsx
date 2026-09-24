@@ -1,4 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const AVATAR_PRESETS = [
+  { label: "Male Student 1", gender: "male", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png" },
+  { label: "Male Student 2", gender: "male", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-3.png" },
+  { label: "Male Student 3", gender: "male", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-9.png" },
+  { label: "Female Student 1", gender: "female", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png" },
+  { label: "Female Student 2", gender: "female", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-4.png" },
+  { label: "Female Student 3", gender: "female", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-6.png" },
+  { label: "Neutral Avatar 1", gender: "other", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png" },
+  { label: "Neutral Avatar 2", gender: "other", url: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-2.png" },
+];
 
 export default function ProfileModal({
   isOpen,
@@ -14,14 +25,31 @@ export default function ProfileModal({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [customImageUrl, setCustomImageUrl] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
+    gender: user?.gender || "male",
     college: user?.college || "",
     course: user?.course || "",
     year: user?.year || "1st Year",
     subjects: Array.isArray(user?.subjects) ? user.subjects.join(", ") : "",
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        gender: user.gender || "male",
+        college: user.college || "",
+        course: user.course || "",
+        year: user.year || "1st Year",
+        subjects: Array.isArray(user.subjects) ? user.subjects.join(", ") : "",
+      });
+    }
+  }, [user]);
 
   if (!isOpen || !user) return null;
 
@@ -46,6 +74,7 @@ export default function ProfileModal({
         },
         body: JSON.stringify({
           name: formData.name,
+          gender: formData.gender,
           college: formData.college,
           course: formData.course,
           year: formData.year,
@@ -68,7 +97,7 @@ export default function ProfileModal({
     }
   };
 
-  // Handle Image Upload to Cloudinary (POST /api/users/profile-image)
+  // Handle Image File Upload
   const handleImageFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -94,7 +123,7 @@ export default function ProfileModal({
         throw new Error(data.message || "Image upload failed");
       }
 
-      setSuccessMsg("Profile picture uploaded to Cloudinary!");
+      setSuccessMsg("Profile picture updated!");
       onProfileUpdated({
         ...user,
         profilePicture: data.data.profilePicture,
@@ -106,9 +135,87 @@ export default function ProfileModal({
     }
   };
 
+  // Handle Preset Avatar Selection
+  const handleSelectPresetAvatar = async (avatarUrl) => {
+    setError("");
+    setSuccessMsg("");
+    setUploadingImage(true);
+
+    try {
+      const res = await fetch(`${apiBase}/api/users/profile-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ imageUrl: avatarUrl }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to apply avatar");
+      }
+
+      setSuccessMsg("Avatar updated!");
+      setShowPresets(false);
+      onProfileUpdated({
+        ...user,
+        profilePicture: data.data.profilePicture,
+      });
+    } catch (err) {
+      setError(err.message || "Could not apply avatar preset");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Handle Custom Image URL Submission
+  const handleApplyCustomUrl = async () => {
+    if (!customImageUrl.trim()) return;
+
+    setError("");
+    setSuccessMsg("");
+    setUploadingImage(true);
+
+    try {
+      const res = await fetch(`${apiBase}/api/users/profile-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ imageUrl: customImageUrl.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to update image URL");
+      }
+
+      setSuccessMsg("Profile picture updated!");
+      setShowUrlInput(false);
+      setCustomImageUrl("");
+      onProfileUpdated({
+        ...user,
+        profilePicture: data.data.profilePicture,
+      });
+    } catch (err) {
+      setError(err.message || "Could not apply image URL");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const avatarUrl =
     user.profilePicture?.url ||
     "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png";
+
+  const genderLabels = {
+    male: "👨 Male",
+    female: "👩 Female",
+    other: "🧑 Other / Non-Binary",
+    prefer_not_to_say: "🤐 Prefer not to say",
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -127,22 +234,88 @@ export default function ProfileModal({
         <div className="profile-header-section">
           <div className="avatar-wrapper">
             <img src={avatarUrl} alt={user.name} className="profile-large-avatar" />
-            {uploadingImage && <div className="avatar-loading-overlay">Uploading...</div>}
+            {uploadingImage && <div className="avatar-loading-overlay">Saving...</div>}
           </div>
 
           <div className="avatar-actions">
             <h4 className="profile-name-title">{user.name}</h4>
             <p className="profile-email-subtitle">{user.email}</p>
-            <label className="btn btn-secondary btn-sm upload-btn">
-              📷 {uploadingImage ? "Uploading to Cloudinary..." : "Change Photo"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageFileChange}
-                disabled={uploadingImage}
-                style={{ display: "none" }}
-              />
-            </label>
+            
+            <div className="avatar-buttons-row">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm upload-btn"
+                onClick={() => setShowPresets(!showPresets)}
+              >
+                🎭 Choose Avatar
+              </button>
+              <label className="btn btn-secondary btn-sm upload-btn">
+                📁 Upload Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  disabled={uploadingImage}
+                  style={{ display: "none" }}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm upload-btn"
+                onClick={() => setShowUrlInput(!showUrlInput)}
+              >
+                🔗 Paste URL
+              </button>
+            </div>
+
+            {/* Avatar Preset Gallery */}
+            {showPresets && (
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "rgba(255,255,255,0.05)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.78rem", color: "#9ca3af" }}>
+                  Select a gender avatar preset:
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {AVATAR_PRESETS.map((preset, idx) => (
+                    <img
+                      key={idx}
+                      src={preset.url}
+                      alt={preset.label}
+                      title={preset.label}
+                      onClick={() => handleSelectPresetAvatar(preset.url)}
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        border: avatarUrl === preset.url ? "2px solid #aa3bff" : "2px solid transparent",
+                        transition: "transform 0.15s ease",
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.15)")}
+                      onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showUrlInput && (
+              <div className="url-input-popover">
+                <input
+                  type="url"
+                  placeholder="https://example.com/avatar.png"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleApplyCustomUrl}
+                  disabled={uploadingImage}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -150,6 +323,10 @@ export default function ProfileModal({
           /* Profile Details View */
           <div className="profile-info-view">
             <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Gender</span>
+                <span className="info-value">{genderLabels[user.gender] || "Not specified"}</span>
+              </div>
               <div className="info-item">
                 <span className="info-label">College / University</span>
                 <span className="info-value">{user.college || "Not specified"}</span>
@@ -190,6 +367,7 @@ export default function ProfileModal({
                 onClick={() => {
                   setFormData({
                     name: user.name || "",
+                    gender: user.gender || "male",
                     college: user.college || "",
                     course: user.course || "",
                     year: user.year || "1st Year",
@@ -217,16 +395,33 @@ export default function ProfileModal({
         ) : (
           /* Profile Edit Form */
           <form onSubmit={handleSaveProfile} className="profile-edit-form">
-            <div className="form-group">
-              <label htmlFor="edit-name">Full Name *</label>
-              <input
-                id="edit-name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="edit-name">Full Name *</label>
+                <input
+                  id="edit-name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="edit-gender">Gender</label>
+                <select
+                  id="edit-gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <option value="male">👨 Male</option>
+                  <option value="female">👩 Female</option>
+                  <option value="other">🧑 Other / Non-Binary</option>
+                  <option value="prefer_not_to_say">🤐 Prefer not to say</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-grid">
@@ -303,3 +498,4 @@ export default function ProfileModal({
     </div>
   );
 }
+

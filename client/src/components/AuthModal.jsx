@@ -1,5 +1,12 @@
 import { useState } from "react";
 
+const GENDER_AVATARS = {
+  male: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png",
+  female: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png",
+  other: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png",
+  prefer_not_to_say: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-2.png",
+};
+
 export default function AuthModal({
   isOpen,
   onClose,
@@ -15,6 +22,7 @@ export default function AuthModal({
     name: "",
     email: "",
     password: "",
+    gender: "male",
     college: "",
     course: "",
     year: "1st Year",
@@ -27,6 +35,8 @@ export default function AuthModal({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const currentPreviewAvatar = GENDER_AVATARS[formData.gender] || GENDER_AVATARS.other;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +53,7 @@ export default function AuthModal({
             name: formData.name,
             email: formData.email,
             password: formData.password,
+            gender: formData.gender,
             college: formData.college,
             course: formData.course,
             year: formData.year,
@@ -113,18 +124,52 @@ export default function AuthModal({
 
         <form onSubmit={handleSubmit} className="auth-form">
           {mode === "register" && (
-            <div className="form-group">
-              <label htmlFor="auth-name">Full Name *</label>
-              <input
-                id="auth-name"
-                name="name"
-                type="text"
-                placeholder="e.g. Alex Johnson"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            <>
+              {/* Live Avatar Preview Based on Gender */}
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", padding: "0.75rem", background: "rgba(170, 59, 255, 0.08)", borderRadius: "10px", border: "1px solid rgba(170, 59, 255, 0.2)" }}>
+                <img
+                  src={currentPreviewAvatar}
+                  alt="Default Avatar"
+                  style={{ width: "52px", height: "52px", borderRadius: "50%", border: "2px solid #aa3bff", objectFit: "cover" }}
+                />
+                <div>
+                  <strong style={{ fontSize: "0.9rem", color: "#f3f4f6" }}>Default Student Avatar</strong>
+                  <p style={{ margin: 0, fontSize: "0.78rem", color: "#9ca3af" }}>
+                    Selected automatically based on your gender. You can change or upload a photo anytime.
+                  </p>
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="auth-name">Full Name *</label>
+                  <input
+                    id="auth-name"
+                    name="name"
+                    type="text"
+                    placeholder="e.g. Alex Johnson"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="auth-gender">Gender *</label>
+                  <select
+                    id="auth-gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                  >
+                    <option value="male">👨 Male</option>
+                    <option value="female">👩 Female</option>
+                    <option value="other">🧑 Other / Non-Binary</option>
+                    <option value="prefer_not_to_say">🤐 Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="form-group">

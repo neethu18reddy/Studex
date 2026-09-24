@@ -42,6 +42,12 @@ async function runTests() {
     assert(userInstance.year === "3rd Year", "User schema includes 'year'");
     assert(Array.isArray(userInstance.subjects) && userInstance.subjects.length === 3, "User schema includes 'subjects' array");
     assert(userInstance.profilePicture && userInstance.profilePicture.url !== undefined, "User schema includes default 'profilePicture.url'");
+    assert(userInstance.gender === "other", "User schema includes 'gender' with default 'other'");
+
+    const { getDefaultAvatarForGender } = require("./models/userModel");
+    assert(typeof getDefaultAvatarForGender === "function", "getDefaultAvatarForGender helper exists");
+    assert(getDefaultAvatarForGender("female").includes("avatar-8"), "getDefaultAvatarForGender generates female avatar for female gender");
+    assert(getDefaultAvatarForGender("male").includes("avatar-7"), "getDefaultAvatarForGender generates male avatar for male gender");
   }
 
   // Test 2: Validation Middleware - validateUpdateProfile

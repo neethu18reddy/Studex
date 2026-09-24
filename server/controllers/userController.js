@@ -1,6 +1,11 @@
 const User = require("../models/userModel");
+const { getDefaultAvatarForGender, GENDER_AVATARS } = require("../models/userModel");
 const asyncHandler = require("../middleware/asyncHandler");
-const { uploadStream, deleteImage, isCloudinaryConfigured } = require("../config/cloudinary");
+const {
+  uploadStream,
+  deleteImage,
+  isCloudinaryConfigured,
+} = require("../config/cloudinary");
 
 /**
  * @desc    Get current student profile
@@ -24,12 +29,12 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Update student profile information
+ * @desc    Update student profile information (supports details and custom avatar/image URL)
  * @route   PUT /api/users/me
  * @access  Private (Requires JWT Auth)
  */
 const updateMe = asyncHandler(async (req, res) => {
-  const { name, email, college, course, year, subjects } = req.body;
+  const { name, email, gender, college, course, year, subjects, profilePicture, avatar, imageUrl } = req.body;
 
   const user = await User.findById(req.user._id);
 
@@ -61,6 +66,39 @@ const updateMe = asyncHandler(async (req, res) => {
   if (year !== undefined) user.year = year;
   if (subjects !== undefined) user.subjects = subjects;
 
+  const customPicture = profilePicture || avatar || imageUrl;
+
+  if (gender !== undefined) {
+    const oldGender = user.gender;
+    user.gender = gender;
+    // If the user currently has one of the default gender avatars and hasn't uploaded a custom image, update default avatar
+    const isDefaultAvatar =
+      !user.profilePicture?.public_id &&
+      Object.values(GENDER_AVATARS).includes(user.profilePicture?.url);
+
+    if (isDefaultAvatar && !customPicture && oldGender !== gender) {
+      user.profilePicture = {
+        url: getDefaultAvatarForGender(gender),
+        public_id: "",
+      };
+    }
+  }
+
+  // Allow setting custom profile picture via URL or base64
+  if (customPicture) {
+    if (typeof customPicture === "string") {
+      user.profilePicture = {
+        url: customPicture.trim(),
+        public_id: "",
+      };
+    } else if (typeof customPicture === "object" && customPicture.url) {
+      user.profilePicture = {
+        url: customPicture.url.trim(),
+        public_id: customPicture.public_id || "",
+      };
+    }
+  }
+
   const updatedUser = await user.save();
 
   // Omit password from response
@@ -75,15 +113,41 @@ const updateMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Upload student profile image to Cloudinary
+ * @desc    Upload student profile image (supports Cloudinary with automatic fallback)
  * @route   POST /api/users/profile-image
  * @access  Private (Requires JWT Auth)
  */
 const uploadProfileImage = asyncHandler(async (req, res) => {
-  if (!req.file) {
+  let pictureUrl = "";
+  let publicId = "";
+
+  // 1. If file uploaded
+  if (req.file) {
+    if (isCloudinaryConfigured()) {
+      // Stream upload directly to Cloudinary
+      const uploadResult = await uploadStream(req.file.buffer, {
+        folder: "studex/avatars",
+        transformation: [
+          { width: 400, height: 400, crop: "fill", gravity: "face" },
+          { quality: "auto", fetch_format: "auto" },
+        ],
+      });
+      pictureUrl = uploadResult.url;
+      publicId = uploadResult.public_id;
+    } else {
+      // Direct Data URI fallback if Cloudinary is not configured
+      const base64Data = req.file.buffer.toString("base64");
+      pictureUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+      publicId = "";
+    }
+  } else if (req.body && (req.body.imageUrl || req.body.url)) {
+    // 2. Or if URL string provided in body
+    pictureUrl = (req.body.imageUrl || req.body.url).trim();
+    publicId = "";
+  } else {
     return res.status(400).json({
       success: false,
-      message: "Please select an image file to upload",
+      message: "Please select an image file or provide an image URL to upload",
     });
   }
 
@@ -95,40 +159,24 @@ const uploadProfileImage = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if Cloudinary credentials are configured
-  if (!isCloudinaryConfigured()) {
-    return res.status(503).json({
-      success: false,
-      message:
-        "Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in server/.env.",
-    });
+  // Clean up previous Cloudinary asset if one existed
+  if (publicId && user.profilePicture && user.profilePicture.public_id) {
+    deleteImage(user.profilePicture.public_id, "image").catch((err) =>
+      console.error(`Failed to clean up old avatar: ${err.message}`)
+    );
   }
-
-  // Upload image buffer to Cloudinary
-  const oldPublicId = user.profilePicture ? user.profilePicture.public_id : null;
-  const result = await uploadStream(req.file.buffer, {
-    folder: "studex/profiles",
-    public_id: `user_${user._id}_${Date.now()}`,
-  });
 
   // Update user's profile picture
   user.profilePicture = {
-    url: result.url,
-    public_id: result.public_id,
+    url: pictureUrl,
+    public_id: publicId,
   };
 
   await user.save();
 
-  // If previous custom image exists, clean it up from Cloudinary asynchronously
-  if (oldPublicId) {
-    deleteImage(oldPublicId).catch((err) =>
-      console.error(`Failed to delete old image ${oldPublicId}:`, err.message)
-    );
-  }
-
   res.status(200).json({
     success: true,
-    message: "Profile picture uploaded successfully",
+    message: "Profile picture updated successfully",
     data: {
       profilePicture: user.profilePicture,
     },

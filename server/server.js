@@ -10,6 +10,9 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const resourceRoutes = require("./routes/resourceRoutes");
+const courseRoutes = require("./routes/courseRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const studySessionRoutes = require("./routes/studySessionRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -53,6 +56,27 @@ app.get("/", (req, res) => {
         create: "POST /api/resources (Protected, multipart/form-data or link)",
         delete: "DELETE /api/resources/:id (Protected)",
       },
+      tasks: {
+        getAll: "GET /api/tasks (Protected, ?status=&priority=&subject=&search=)",
+        getToday: "GET /api/tasks/today (Protected)",
+        getUpcoming: "GET /api/tasks/upcoming (Protected)",
+        create: "POST /api/tasks (Protected)",
+        update: "PATCH /api/tasks/:id (Protected)",
+        delete: "DELETE /api/tasks/:id (Protected)",
+      },
+      studySessions: {
+        getAll: "GET /api/study-sessions (Protected, ?subjectId=&limit=)",
+        getStats: "GET /api/study-sessions/stats (Protected)",
+        record: "POST /api/study-sessions (Protected)",
+        delete: "DELETE /api/study-sessions/:id (Protected)",
+      },
+      courses: {
+        getAll: "GET /api/courses",
+        getById: "GET /api/courses/:id",
+        create: "POST /api/courses (Protected)",
+        update: "PUT /api/courses/:id (Protected)",
+        delete: "DELETE /api/courses/:id (Protected)",
+      },
     },
   });
 });
@@ -73,6 +97,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/resources", resourceRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/study-sessions", studySessionRoutes);
+app.use("/api/courses", courseRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
