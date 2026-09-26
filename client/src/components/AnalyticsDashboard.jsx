@@ -124,10 +124,6 @@ Keep grinding! 🚀`;
       {/* Header Section */}
       <div className="analytics-header-row">
         <div>
-          <div className="analytics-badge-tag">
-            <span className="badge-pulse-dot"></span>
-            <span>PHASE 9 &bull; MILESTONE 9 &bull; REAL-TIME PROGRESS TRACKING</span>
-          </div>
           <h2 className="analytics-main-title">📈 Analytics & Progress Tracking</h2>
           <p className="analytics-subtitle">
             MongoDB aggregation-powered dashboard tracking daily focus, weekly study goals, subject distribution, and task velocity.
@@ -632,7 +628,7 @@ Keep grinding! 🚀`;
                   required
                 />
                 <small className="form-hint">
-                  Default: 15 hours per week (matches Milestone 9: 12.4 / 15 hrs).
+                  Recommended: 15 hours per week (e.g. 12.4 / 15 hrs).
                 </small>
               </div>
 
@@ -652,7 +648,7 @@ Keep grinding! 🚀`;
                   required
                 />
                 <small className="form-hint">
-                  Default: 28 tasks per week (matches Milestone 9: 23 / 28).
+                  Recommended: 28 tasks per week (e.g. 23 / 28).
                 </small>
               </div>
 

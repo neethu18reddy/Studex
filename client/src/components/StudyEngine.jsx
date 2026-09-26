@@ -324,27 +324,19 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
 
           {/* Custom Duration Configurator */}
           {showCustomInput && (
-            <div style={{ padding: "0.75rem", background: "rgba(170, 59, 255, 0.08)", borderRadius: "10px", border: "1px solid rgba(170, 59, 255, 0.2)", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#f3f4f6" }}>Custom Focus Duration:</span>
-                <span style={{ fontSize: "0.85rem", color: "#aa3bff", fontWeight: 700 }}>{customMinutesInput} minutes</span>
+            <div className="custom-duration-panel animate-scale-in">
+              <div className="custom-duration-header">
+                <span className="custom-duration-title">Custom Focus Duration:</span>
+                <span className="custom-duration-badge">{customMinutesInput} minutes</span>
               </div>
 
               {/* Quick Preset Chips */}
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              <div className="custom-chips-row">
                 {[15, 30, 45, 90, 120].map((mins) => (
                   <button
                     key={mins}
                     type="button"
-                    style={{
-                      padding: "4px 8px",
-                      fontSize: "0.75rem",
-                      background: customMinutesInput === mins ? "#aa3bff" : "rgba(255,255,255,0.06)",
-                      color: customMinutesInput === mins ? "#fff" : "var(--text)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                    }}
+                    className={`custom-chip-btn ${customMinutesInput === mins ? "active" : ""}`}
                     onClick={() => {
                       setCustomMinutesInput(mins);
                       handleApplyCustomDuration(mins);
@@ -356,11 +348,12 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
               </div>
 
               {/* Stepper and Direct Input */}
-              <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "4px" }}>
+              <div className="custom-stepper-row">
                 <button
                   type="button"
-                  style={{ padding: "4px 8px", background: "var(--code-bg)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer" }}
+                  className="btn-stepper"
                   onClick={() => setCustomMinutesInput((prev) => Math.max(1, prev - 5))}
+                  title="Subtract 5 minutes"
                 >
                   -5m
                 </button>
@@ -370,22 +363,22 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                   max="360"
                   value={customMinutesInput}
                   onChange={(e) => setCustomMinutesInput(Number(e.target.value))}
-                  style={{ width: "70px", padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-h)", textAlign: "center" }}
+                  className="custom-minutes-input"
                 />
                 <button
                   type="button"
-                  style={{ padding: "4px 8px", background: "var(--code-bg)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer" }}
+                  className="btn-stepper"
                   onClick={() => setCustomMinutesInput((prev) => Math.min(360, prev + 5))}
+                  title="Add 5 minutes"
                 >
                   +5m
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm"
-                  style={{ marginLeft: "auto" }}
+                  className="btn btn-primary btn-sm btn-apply-custom"
                   onClick={() => handleApplyCustomDuration(customMinutesInput)}
                 >
-                  Apply {customMinutesInput}m
+                  Set {customMinutesInput}m
                 </button>
               </div>
             </div>

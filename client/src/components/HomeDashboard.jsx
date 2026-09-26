@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import ShareableStreakCardModal from "./ShareableStreakCardModal";
 
 export default function HomeDashboard({
   token,
@@ -14,10 +15,12 @@ export default function HomeDashboard({
 
   // Consolidated Dashboard Data
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [streakData, setStreakData] = useState(null);
   const [todayTasks, setTodayTasks] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [recentResources, setRecentResources] = useState([]);
+  const [showStreakModal, setShowStreakModal] = useState(false);
 
   // Quick Task Add Input State
   const [quickTaskTitle, setQuickTaskTitle] = useState("");
@@ -69,9 +72,12 @@ export default function HomeDashboard({
       try {
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [analyticsRes, tasksRes, todayRes, subjectsRes, resourcesRes] =
+        const [analyticsRes, streaksRes, tasksRes, todayRes, subjectsRes, resourcesRes] =
           await Promise.all([
             fetch(`${apiBase}/api/analytics/dashboard`, { headers }).catch(
+              () => null
+            ),
+            fetch(`${apiBase}/api/streaks/dashboard`, { headers }).catch(
               () => null
             ),
             fetch(`${apiBase}/api/tasks`, { headers }).catch(() => null),
@@ -83,6 +89,11 @@ export default function HomeDashboard({
         if (analyticsRes && analyticsRes.ok) {
           const aData = await analyticsRes.json();
           if (aData.success) setAnalyticsData(aData.data);
+        }
+
+        if (streaksRes && streaksRes.ok) {
+          const stData = await streaksRes.json();
+          if (stData.success) setStreakData(stData.data);
         }
 
         if (tasksRes && tasksRes.ok) {
@@ -388,7 +399,7 @@ export default function HomeDashboard({
       <section className="home-week-glance-card card">
         <div className="home-card-header">
           <div className="home-card-title-group">
-            <span className="section-kicker">Milestone 9 Tracking</span>
+            <span className="section-kicker">Weekly Momentum</span>
             <h3 className="home-card-title">📊 This Week at a Glance</h3>
           </div>
           <button
@@ -490,6 +501,130 @@ export default function HomeDashboard({
                 {overview.consistency.activeDaysThisWeek} of 7 days active
               </span>
               <span className="glance-action-hint">Streak Details &rarr;</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          PHASE 10 & MILESTONE 10: GAMIFICATION & STREAK SPOTLIGHT
+         ============================================================ */}
+      <section className="home-streak-spotlight-card card animate-slide-up">
+        <div className="home-card-header">
+          <div className="home-card-title-group">
+            <span className="section-kicker">Streaks & Rewards</span>
+            <h3 className="home-card-title">🔥 Daily & Weekly Streak System</h3>
+          </div>
+          <div className="home-streak-header-actions">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm btn-share-streak-home"
+              onClick={() => setShowStreakModal(true)}
+            >
+              ✨ Generate Shareable Streak Card
+            </button>
+            <button
+              type="button"
+              className="btn-text-link"
+              onClick={() => onNavigateTab("gamification")}
+            >
+              All Badges & Streaks &rarr;
+            </button>
+          </div>
+        </div>
+
+        <div className="home-streak-spotlight-grid">
+          {/* Daily Streak Highlight */}
+          <div
+            className="home-streak-highlight-tile daily-glow"
+            onClick={() => onNavigateTab("gamification")}
+            title="Click to view daily streak details & badges"
+          >
+            <div className="streak-highlight-header">
+              <span className="streak-bubble-icon flame">🔥</span>
+              <div className="streak-highlight-text-col">
+                <span className="streak-highlight-kicker">DAILY STUDY TARGET</span>
+                <strong className="streak-highlight-val">
+                  {streakData?.dailyStreak?.label || "🔥 12 Day Streak"}
+                </strong>
+              </div>
+              <span
+                className={`streak-pill-tag ${
+                  streakData?.dailyStreak?.isTargetMetToday ? "met" : "pending"
+                }`}
+              >
+                {streakData?.dailyStreak?.isTargetMetToday
+                  ? "Target Met Today ✅"
+                  : "Target In Progress ⏳"}
+              </span>
+            </div>
+
+            <div className="streak-highlight-meter">
+              <div className="meter-label-row">
+                <span>
+                  Today: {streakData?.dailyStreak?.todayMinutes || 0} /{" "}
+                  {streakData?.dailyStreak?.targetMinutes || 45} mins
+                </span>
+                <strong>{streakData?.dailyStreak?.todayPercentage || 0}%</strong>
+              </div>
+              <div className="streak-mini-progress-track">
+                <div
+                  className="streak-mini-progress-fill flame"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      streakData?.dailyStreak?.todayPercentage || 0
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Weekly Streak Highlight */}
+          <div
+            className="home-streak-highlight-tile weekly-glow"
+            onClick={() => onNavigateTab("gamification")}
+            title="Click to view weekly streak details & badges"
+          >
+            <div className="streak-highlight-header">
+              <span className="streak-bubble-icon trophy">🏆</span>
+              <div className="streak-highlight-text-col">
+                <span className="streak-highlight-kicker">WEEKLY GOAL TARGET</span>
+                <strong className="streak-highlight-val">
+                  {streakData?.weeklyStreak?.label || "🏆 4 Week Goal Streak"}
+                </strong>
+              </div>
+              <span
+                className={`streak-pill-tag ${
+                  streakData?.weeklyStreak?.isTargetMetThisWeek ? "met" : "pending"
+                }`}
+              >
+                {streakData?.weeklyStreak?.isTargetMetThisWeek
+                  ? "Goal Met 🏆"
+                  : "Week In Progress 📈"}
+              </span>
+            </div>
+
+            <div className="streak-highlight-meter">
+              <div className="meter-label-row">
+                <span>
+                  This Week: {streakData?.weeklyStreak?.thisWeekHours || 0} /{" "}
+                  {streakData?.weeklyStreak?.targetHours || 15} hrs
+                </span>
+                <strong>{streakData?.weeklyStreak?.thisWeekPercentage || 0}%</strong>
+              </div>
+              <div className="streak-mini-progress-track">
+                <div
+                  className="streak-mini-progress-fill trophy"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      streakData?.weeklyStreak?.thisWeekPercentage || 0
+                    )}%`,
+                  }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
@@ -894,6 +1029,15 @@ export default function HomeDashboard({
           </div>
         </div>
       </div>
+
+      {/* Shareable Streak Card Modal on Home */}
+      <ShareableStreakCardModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        streakData={streakData}
+        currentUser={currentUser}
+        onFeedback={onFeedback}
+      />
     </div>
   );
 }

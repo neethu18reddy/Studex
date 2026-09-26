@@ -14,6 +14,7 @@ const courseRoutes = require("./routes/courseRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const studySessionRoutes = require("./routes/studySessionRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const streakRoutes = require("./routes/streakRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -101,6 +102,7 @@ app.use("/api/resources", resourceRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/study-sessions", studySessionRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/streaks", streakRoutes);
 app.use("/api/courses", courseRoutes);
 
 // Error Handling Middleware

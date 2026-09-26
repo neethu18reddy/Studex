@@ -57,8 +57,15 @@ export default function Sidebar({
       id: "analytics",
       icon: "📈",
       label: "Analytics & Progress",
-      subtext: "Milestone 9 Tracking",
+      subtext: "Progress & Metrics",
       badge: "Analytics",
+    },
+    {
+      id: "gamification",
+      icon: "🏆",
+      label: "Gamification & Streaks",
+      subtext: "Streaks & Rewards",
+      badge: "Streaks",
     },
   ];
 

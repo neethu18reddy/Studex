@@ -6,6 +6,7 @@ import AcademicWorkspace from "./components/AcademicWorkspace";
 import TaskEngine from "./components/TaskEngine";
 import StudyEngine from "./components/StudyEngine";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import GamificationEngine from "./components/GamificationEngine";
 import HomeDashboard from "./components/HomeDashboard";
 import Sidebar from "./components/Sidebar";
 
@@ -603,6 +604,19 @@ function App() {
                 <AnalyticsDashboard
                   token={token}
                   apiBase={API_BASE}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
+            )}
+
+            {/* Tab 5: Phase 10 Gamification & Streaks */}
+            {activeTab === "gamification" && (
+              <div key="gamification" className="tab-content-pane animate-slide-up">
+                <GamificationEngine
+                  token={token}
+                  apiBase={API_BASE}
+                  currentUser={currentUser}
                   onError={(msg) => setActionFeedback(`Error: ${msg}`)}
                   onFeedback={(msg) => setActionFeedback(msg)}
                 />
