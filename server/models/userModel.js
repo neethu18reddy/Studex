@@ -62,6 +62,16 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    weeklyStudyGoalHours: {
+      type: Number,
+      default: 15,
+      min: [1, "Weekly study goal must be at least 1 hour"],
+    },
+    weeklyTaskGoal: {
+      type: Number,
+      default: 28,
+      min: [1, "Weekly task goal must be at least 1 task"],
+    },
   },
   {
     timestamps: true,
