@@ -5,6 +5,9 @@ import ProfileModal from "./components/ProfileModal";
 import AcademicWorkspace from "./components/AcademicWorkspace";
 import TaskEngine from "./components/TaskEngine";
 import StudyEngine from "./components/StudyEngine";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import HomeDashboard from "./components/HomeDashboard";
+import Sidebar from "./components/Sidebar";
 
 const API_BASE = "http://localhost:5000";
 
@@ -24,6 +27,9 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Sidebar State (false = symbols only, true = symbols + names)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
   // Auth Form State (Gateway Landing)
   const [authFormData, setAuthFormData] = useState({
     name: "",
@@ -36,8 +42,20 @@ function App() {
     subjects: "",
   });
 
-  // Active Main Navigation Tab
-  const [activeTab, setActiveTab] = useState("workspace"); // 'workspace', 'tasks', 'study'
+  // Active Main Navigation Tab (Default is 'home' on login)
+  const [activeTab, setActiveTab] = useState("home"); // 'home', 'workspace', 'tasks', 'study', 'analytics'
+
+  // Theme State ('dark' or 'light')
+  const [theme, setTheme] = useState(() => localStorage.getItem("studex_theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("studex_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   // Profile Modal State
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -183,59 +201,101 @@ function App() {
   }
 
   return (
-    <div className="studex-app">
-      {/* Header */}
-      <header className="studex-header">
-        <div className="brand-group">
-          <div className="brand-logo">SX</div>
-          <div>
-            <h1 className="brand-title">Studex</h1>
-            <p className="brand-subtitle">Academic Workspace & Student Network</p>
-          </div>
-        </div>
+    <div className={`studex-layout-wrapper ${currentUser ? "has-sidebar" : ""}`}>
+      {currentUser && (
+        <Sidebar
+          isExpanded={sidebarExpanded}
+          onToggle={() => setSidebarExpanded((prev) => !prev)}
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          currentUser={currentUser}
+          onOpenProfile={() => setShowProfileModal(true)}
+          onLogout={handleLogout}
+          serverHealth={serverHealth}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
 
-        {/* Right Header Status & Controls */}
-        <div className="header-right-controls">
-          <div className="status-container">
-            <div className={`status-badge ${serverHealth.status}`}>
-              <span className="dot"></span>
-              <span>Server: {serverHealth.status.toUpperCase()}</span>
+      <div className="studex-app">
+        {/* Header */}
+        <header className="studex-header">
+          <div className="brand-group">
+            {currentUser && (
+              <button
+                type="button"
+                className="header-sidebar-toggle-btn"
+                onClick={() => setSidebarExpanded((prev) => !prev)}
+                title={sidebarExpanded ? "Collapse Sidebar (Show symbols only)" : "Expand Sidebar (Show feature names)"}
+              >
+                {sidebarExpanded ? "◀" : "☰"}
+              </button>
+            )}
+            <div className="brand-logo" onClick={() => currentUser && setActiveTab("home")} style={{ cursor: "pointer" }}>
+              SX
             </div>
-            <div
-              className={`status-badge ${
-                serverHealth.database === "connected" ? "online" : "warning"
-              }`}
+            <div>
+              <h1 className="brand-title" onClick={() => currentUser && setActiveTab("home")} style={{ cursor: "pointer" }}>
+                Studex
+              </h1>
+              <p className="brand-subtitle">Academic Workspace & Student Network</p>
+            </div>
+          </div>
+
+          {/* Right Header Status & Controls */}
+          <div className="header-right-controls">
+            {/* Global Theme Toggle Button */}
+            <button
+              type="button"
+              className="header-theme-toggle-btn"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+              aria-label="Toggle Color Theme"
             >
-              <span className="dot"></span>
-              <span>DB: {serverHealth.database.toUpperCase()}</span>
-            </div>
-          </div>
+              <span className="theme-toggle-icon">{theme === "dark" ? "☀️" : "🌙"}</span>
+              <span className="theme-toggle-label">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+            </button>
 
-          {currentUser && (
-            <div className="user-profile-menu">
-              <button
-                className="user-profile-btn"
-                onClick={() => setShowProfileModal(true)}
-                title="View Student Profile"
+            <div className="status-container">
+              <div className={`status-badge ${serverHealth.status}`}>
+                <span className="dot"></span>
+                <span>Server: {serverHealth.status.toUpperCase()}</span>
+              </div>
+              <div
+                className={`status-badge ${
+                  serverHealth.database === "connected" ? "online" : "warning"
+                }`}
               >
-                <img
-                  src={avatarUrl}
-                  alt={currentUser.name}
-                  className="header-avatar"
-                />
-                <span className="user-name-text">{currentUser.name}</span>
-              </button>
-              <button
-                className="btn btn-secondary btn-sm btn-danger-outline"
-                onClick={handleLogout}
-                title="Logout"
-              >
-                🚪 Logout
-              </button>
+                <span className="dot"></span>
+                <span>DB: {serverHealth.database.toUpperCase()}</span>
+              </div>
             </div>
-          )}
-        </div>
-      </header>
+
+            {currentUser && (
+              <div className="user-profile-menu">
+                <button
+                  className="user-profile-btn"
+                  onClick={() => setShowProfileModal(true)}
+                  title="View Student Profile"
+                >
+                  <img
+                    src={avatarUrl}
+                    alt={currentUser.name}
+                    className="header-avatar"
+                  />
+                  <span className="user-name-text">{currentUser.name}</span>
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm btn-danger-outline"
+                  onClick={handleLogout}
+                  title="Logout"
+                >
+                  🚪 Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
 
       {/* Main Content Area */}
       <main className="main-content">
@@ -484,98 +544,69 @@ function App() {
             </div>
           </div>
         ) : (
-          /* 2. When Logged In: Unlocks Academic Workspace */
+          /* 2. When Logged In: Unlocks Selected Feature via Sidebar (Default: Home) */
           <>
-            {/* Student Profile Quick Banner */}
-            <section className="hero-banner student-profile-banner">
-              <div className="student-profile-summary">
-                <img
-                  src={avatarUrl}
-                  alt={currentUser.name}
-                  className="student-banner-avatar"
-                  onClick={() => setShowProfileModal(true)}
-                  title="Click to change photo"
+            {/* Tab 0: Home Command Center (Default Landing Page) */}
+            {activeTab === "home" && (
+              <div key="home" className="tab-content-pane animate-slide-up">
+                <HomeDashboard
+                  token={token}
+                  apiBase={API_BASE}
+                  currentUser={currentUser}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onOpenProfile={() => setShowProfileModal(true)}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
                 />
-                <div className="student-banner-details">
-                  <div className="student-name-row">
-                    <h2>{currentUser.name}</h2>
-                    <span className="student-tag-year">
-                      {currentUser.year || "Student"}
-                    </span>
-                  </div>
-                  <p className="student-college-info">
-                    {currentUser.college ? `${currentUser.college} • ` : ""}
-                    {currentUser.course || "Academic Workspace"} ({currentUser.email})
-                  </p>
-                </div>
               </div>
-
-              <div className="hero-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowProfileModal(true)}
-                >
-                  👤 Edit Profile & Photo
-                </button>
-                <button
-                  className="btn btn-secondary btn-danger-outline"
-                  onClick={handleLogout}
-                >
-                  🚪 Logout
-                </button>
-              </div>
-            </section>
-
-            {/* Navigation Tabs for Studex Features */}
-            <div className="main-nav-tabs">
-              <button
-                className={`main-nav-tab ${activeTab === "workspace" ? "active" : ""}`}
-                onClick={() => setActiveTab("workspace")}
-              >
-                📚 Academic Workspace
-              </button>
-              <button
-                className={`main-nav-tab ${activeTab === "tasks" ? "active" : ""}`}
-                onClick={() => setActiveTab("tasks")}
-              >
-                📋 Student Task Engine
-              </button>
-              <button
-                className={`main-nav-tab ${activeTab === "study" ? "active" : ""}`}
-                onClick={() => setActiveTab("study")}
-              >
-                ⏱️ Focus Study Engine
-              </button>
-            </div>
+            )}
 
             {/* Tab 1: Academic Workspace (Subjects + Resources) */}
             {activeTab === "workspace" && (
-              <AcademicWorkspace
-                token={token}
-                apiBase={API_BASE}
-                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
-                onFeedback={(msg) => setActionFeedback(msg)}
-              />
+              <div key="workspace" className="tab-content-pane animate-slide-up">
+                <AcademicWorkspace
+                  token={token}
+                  apiBase={API_BASE}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
             )}
 
             {/* Tab 2: Student Task Engine */}
             {activeTab === "tasks" && (
-              <TaskEngine
-                token={token}
-                apiBase={API_BASE}
-                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
-                onFeedback={(msg) => setActionFeedback(msg)}
-              />
+              <div key="tasks" className="tab-content-pane animate-slide-up">
+                <TaskEngine
+                  token={token}
+                  apiBase={API_BASE}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
             )}
 
-            {/* Tab 3: Study Engine & Focus Analytics */}
+            {/* Tab 3: Focus Study Engine */}
             {activeTab === "study" && (
-              <StudyEngine
-                token={token}
-                apiBase={API_BASE}
-                onError={(msg) => setActionFeedback(`Error: ${msg}`)}
-                onFeedback={(msg) => setActionFeedback(msg)}
-              />
+              <div key="study" className="tab-content-pane animate-slide-up">
+                <StudyEngine
+                  token={token}
+                  apiBase={API_BASE}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
+            )}
+
+            {/* Tab 4: Milestone 9 Progress Tracking & Analytics */}
+            {activeTab === "analytics" && (
+              <div key="analytics" className="tab-content-pane animate-slide-up">
+                <AnalyticsDashboard
+                  token={token}
+                  apiBase={API_BASE}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
             )}
           </>
         )}
@@ -596,6 +627,7 @@ function App() {
         onProfileUpdated={(updated) => setCurrentUser(updated)}
         onLogout={handleLogout}
       />
+      </div>
     </div>
   );
 }
