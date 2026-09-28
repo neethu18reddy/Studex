@@ -1,4 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  AnalyticsIcon,
+  TargetIcon,
+  ShareIcon,
+  RotateCcwIcon,
+  CheckIcon,
+  ClockIcon,
+  TasksIcon,
+  TrophyIcon,
+  CalendarIcon,
+  StarIcon,
+  PlusIcon
+} from "./Icons";
 
 export default function AnalyticsDashboard({ token, apiBase, onError, onFeedback }) {
   const [loading, setLoading] = useState(true);
@@ -12,6 +25,7 @@ export default function AnalyticsDashboard({ token, apiBase, onError, onFeedback
   });
   const [savingGoal, setSavingGoal] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
   // Fetch Dashboard Analytics from MongoDB Aggregation Endpoint
   const fetchAnalytics = useCallback(async (isRefresh = false) => {
@@ -98,9 +112,9 @@ Keep grinding! 🚀`;
 
   if (loading) {
     return (
-      <div className="analytics-loading-pane">
+      <div className="analytics-loading-pane animate-fade-in">
         <div className="spinner"></div>
-        <p>Crunching MongoDB analytics & progress tracking metrics...</p>
+        <p className="loading-text">Crunching MongoDB analytics & progress tracking metrics...</p>
       </div>
     );
   }
@@ -108,7 +122,7 @@ Keep grinding! 🚀`;
   const overview = data?.overview?.thisWeek || {
     study: { currentHours: 0, targetHours: 15, percentage: 0, formatted: "0.0 / 15 hrs" },
     tasks: { completed: 0, target: 28, pending: 0, total: 0, completionRate: 0, formatted: "0 / 28" },
-    consistency: { currentStreak: 0, streakLabel: "🔥 0 days", activeDaysThisWeek: 0, score: 0, weekMatrix: [] },
+    consistency: { currentStreak: 0, streakLabel: "0 days", activeDaysThisWeek: 0, score: 0, weekMatrix: [] },
   };
 
   const metrics = data?.metrics || {};
@@ -119,189 +133,231 @@ Keep grinding! 🚀`;
   // Find maximum minutes in daily trend to scale chart bars nicely
   const maxTrendMins = Math.max(60, ...dailyTrend.map((d) => d.minutes || 0));
 
+  // Find highest study day
+  const topDay = dailyTrend.reduce(
+    (max, d) => (d.minutes > (max?.minutes || 0) ? d : max),
+    null
+  );
+
   return (
     <div className="analytics-dashboard-container animate-fade-in">
-      {/* Header Section */}
+      {/* 1. Header Section with Controls */}
       <div className="analytics-header-row">
-        <div>
-          <h2 className="analytics-main-title">📈 Analytics & Progress Tracking</h2>
-          <p className="analytics-subtitle">
-            MongoDB aggregation-powered dashboard tracking daily focus, weekly study goals, subject distribution, and task velocity.
-          </p>
+        <div className="analytics-title-block">
+          <div className="analytics-title-badge-line">
+            <div className="analytics-hero-icon-bubble">
+              <AnalyticsIcon size={20} />
+            </div>
+            <div>
+              <h2 className="analytics-main-title">Analytics & Progress Tracking</h2>
+              <p className="analytics-subtitle">
+                High-precision focus trends, subject distributions, and completion velocity.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="analytics-header-actions">
+          {/* Range Switcher */}
+          <div className="analytics-range-pills">
+            <button
+              type="button"
+              className={`analytics-range-btn ${selectedRange === "this_week" ? "active" : ""}`}
+              onClick={() => setSelectedRange("this_week")}
+            >
+              This Week
+            </button>
+            <button
+              type="button"
+              className={`analytics-range-btn ${selectedRange === "past_30" ? "active" : ""}`}
+              onClick={() => setSelectedRange("past_30")}
+            >
+              Past 30 Days
+            </button>
+          </div>
+
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm glossy-btn"
             onClick={() => setShowGoalModal(true)}
             title="Configure Weekly Goals"
           >
-            🎯 Adjust Goals
+            <TargetIcon size={14} />
+            <span>Adjust Goals</span>
           </button>
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm glossy-btn"
             onClick={handleCopySummary}
             title="Copy formatted summary"
           >
-            {copiedSummary ? "✅ Copied" : "📋 Share Summary"}
+            {copiedSummary ? <CheckIcon size={14} /> : <ShareIcon size={14} />}
+            <span>{copiedSummary ? "Copied" : "Share"}</span>
           </button>
           <button
             type="button"
-            className={`btn btn-secondary btn-sm ${refreshing ? "loading" : ""}`}
+            className={`btn btn-secondary btn-sm glossy-btn ${refreshing ? "loading" : ""}`}
             onClick={() => fetchAnalytics(true)}
             disabled={refreshing}
             title="Refresh Aggregations"
           >
-            {refreshing ? "🔄 Refreshing..." : "🔄 Refresh"}
+            <RotateCcwIcon size={14} className={refreshing ? "spin-animation" : ""} />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </div>
 
-      {/* ============================================================
-          MILESTONE 9 SHOWCASE: "THIS WEEK" HERO DASHBOARD CARD
-          Study:  ████████████░░ 12.4 / 15 hrs
-          Tasks:  ██████████░░░ 23 / 28
-          Consistency: 🔥 6 days
-         ============================================================ */}
-      <section className="milestone-dashboard-hero-card card">
-        <div className="milestone-hero-header">
-          <div className="milestone-hero-title-group">
-            <span className="milestone-hero-badge">This Week's Momentum</span>
-            <h3 className="milestone-hero-title">This Week</h3>
-          </div>
-          <div className="milestone-hero-period">
-            <span>📅 Active Week Summary</span>
-          </div>
-        </div>
-
-        <div className="milestone-hero-grid">
-          {/* 1. Study Progress Widget */}
-          <div className="milestone-hero-item study-item">
-            <div className="milestone-item-header">
-              <div className="milestone-item-label-group">
-                <span className="milestone-item-icon">⏱️</span>
-                <span className="milestone-item-name">Study</span>
+      {/* 2. Hero Momentum Showcase (3 Glossy Interactive Cards) */}
+      <section className="analytics-momentum-hero">
+        <div className="analytics-momentum-grid">
+          {/* Card 1: Study Time Progress */}
+          <div className="card analytics-momentum-card study-momentum">
+            <div className="momentum-card-header">
+              <div className="momentum-title-group">
+                <div className="momentum-icon-wrap study-glow">
+                  <ClockIcon size={18} />
+                </div>
+                <div>
+                  <span className="momentum-kicker">Study Momentum</span>
+                  <h4 className="momentum-title">Weekly Focus Hours</h4>
+                </div>
               </div>
-              <span className="milestone-item-val">{overview.study.formatted}</span>
-            </div>
-
-            {/* ASCII & Visual Progress Bar */}
-            <div className="milestone-progress-bar-container">
-              <div
-                className="milestone-progress-bar-fill study-bar"
-                style={{ width: `${Math.min(100, overview.study.percentage)}%` }}
-              ></div>
-            </div>
-
-            <div className="milestone-item-footer">
-              <span className="ascii-representation">
-                {overview.study.asciiBar || `████████████░░ ${overview.study.formatted}`}
-              </span>
-              <span className="percentage-pill study-pill">
-                {overview.study.percentage}% of {overview.study.targetHours}h goal
+              <span className="momentum-tag-pill study-pill">
+                {overview.study.percentage}% Achieved
               </span>
             </div>
-          </div>
 
-          {/* 2. Tasks Progress Widget */}
-          <div className="milestone-hero-item tasks-item">
-            <div className="milestone-item-header">
-              <div className="milestone-item-label-group">
-                <span className="milestone-item-icon">📋</span>
-                <span className="milestone-item-name">Tasks</span>
-              </div>
-              <span className="milestone-item-val">{overview.tasks.formatted}</span>
+            <div className="momentum-stat-row">
+              <span className="momentum-huge-stat">{overview.study.formatted.split("/")[0]?.trim() || "0"}</span>
+              <span className="momentum-stat-denom">/ {overview.study.targetHours} hrs target</span>
             </div>
 
-            {/* ASCII & Visual Progress Bar */}
-            <div className="milestone-progress-bar-container">
+            <div className="momentum-bar-wrap">
               <div
-                className="milestone-progress-bar-fill tasks-bar"
+                className="momentum-bar-fill study-gradient"
+                style={{ width: `${Math.min(100, Math.max(4, overview.study.percentage))}%` }}
+              >
+                <div className="momentum-bar-shine"></div>
+              </div>
+            </div>
+
+            <div className="momentum-footer-row">
+              <span className="momentum-footer-hint">
+                {overview.study.percentage >= 100
+                  ? "🎉 Weekly target surpassed!"
+                  : `${Math.max(0, (overview.study.targetHours - overview.study.currentHours)).toFixed(1)} hrs remaining`}
+              </span>
+              <span className="momentum-chip">{metrics.weeklyStudyTime?.weeklySessions || 0} sessions</span>
+            </div>
+          </div>
+
+          {/* Card 2: Tasks Execution Velocity */}
+          <div className="card analytics-momentum-card tasks-momentum">
+            <div className="momentum-card-header">
+              <div className="momentum-title-group">
+                <div className="momentum-icon-wrap tasks-glow">
+                  <TasksIcon size={18} />
+                </div>
+                <div>
+                  <span className="momentum-kicker">Task Execution</span>
+                  <h4 className="momentum-title">Task Velocity</h4>
+                </div>
+              </div>
+              <span className="momentum-tag-pill tasks-pill">
+                {overview.tasks.completionRate}% Rate
+              </span>
+            </div>
+
+            <div className="momentum-stat-row">
+              <span className="momentum-huge-stat">{overview.tasks.completed}</span>
+              <span className="momentum-stat-denom">/ {overview.tasks.target} target</span>
+            </div>
+
+            <div className="momentum-bar-wrap">
+              <div
+                className="momentum-bar-fill tasks-gradient"
                 style={{
                   width: `${Math.min(
                     100,
-                    Math.round((overview.tasks.completed / (overview.tasks.target || 1)) * 100)
+                    Math.max(4, Math.round((overview.tasks.completed / (overview.tasks.target || 1)) * 100))
                   )}%`,
                 }}
-              ></div>
+              >
+                <div className="momentum-bar-shine"></div>
+              </div>
             </div>
 
-            <div className="milestone-item-footer">
-              <span className="ascii-representation">
-                {overview.tasks.asciiBar || `██████████░░░ ${overview.tasks.formatted}`}
+            <div className="momentum-footer-row">
+              <span className="momentum-footer-hint">
+                {overview.tasks.pending} active tasks in progress
               </span>
-              <span className="percentage-pill tasks-pill">
-                {overview.tasks.completionRate}% completion rate
-              </span>
+              <span className="momentum-chip">{overview.tasks.completed} resolved</span>
             </div>
           </div>
 
-          {/* 3. Consistency / Streak Widget */}
-          <div className="milestone-hero-item consistency-item">
-            <div className="milestone-item-header">
-              <div className="milestone-item-label-group">
-                <span className="milestone-item-icon">🔥</span>
-                <span className="milestone-item-name">Consistency</span>
+          {/* Card 3: 7-Day Consistency Matrix */}
+          <div className="card analytics-momentum-card consistency-momentum">
+            <div className="momentum-card-header">
+              <div className="momentum-title-group">
+                <div className="momentum-icon-wrap streak-glow">
+                  <TrophyIcon size={18} />
+                </div>
+                <div>
+                  <span className="momentum-kicker">Habit Consistency</span>
+                  <h4 className="momentum-title">Daily Study Rhythm</h4>
+                </div>
               </div>
-              <span className="milestone-streak-badge">
-                {overview.consistency.streakLabel || `🔥 ${overview.consistency.currentStreak} days`}
+              <span className="momentum-tag-pill streak-pill">
+                {overview.consistency.activeDaysThisWeek}/7 Active Days
               </span>
             </div>
 
-            {/* 7-Day Day Badges */}
-            <div className="consistency-days-row">
+            <div className="consistency-chips-matrix">
               {weekMatrix.map((day, idx) => (
                 <div
                   key={idx}
-                  className={`consistency-day-chip ${day.active ? "active" : "inactive"} ${
+                  className={`consistency-day-bubble ${day.active ? "active" : "inactive"} ${
                     day.isToday ? "today" : ""
                   }`}
                   title={`${day.dayName} (${day.date}): ${day.minutes} mins studied`}
                 >
-                  <span className="day-name">{day.dayName}</span>
-                  <span className="day-status-icon">{day.active ? "🔥" : "•"}</span>
-                  <span className="day-mins">{day.minutes > 0 ? `${day.minutes}m` : "-"}</span>
+                  <span className="bubble-day">{day.dayName.slice(0, 3)}</span>
+                  <span className="bubble-indicator"></span>
+                  <span className="bubble-mins">{day.minutes > 0 ? `${day.minutes}m` : "0m"}</span>
                 </div>
               ))}
             </div>
 
-            <div className="milestone-item-footer">
-              <span className="consistency-subtext">
-                {overview.consistency.activeDaysThisWeek} of 7 active study days this week
+            <div className="momentum-footer-row">
+              <span className="momentum-footer-hint">
+                Current streak: <strong>{overview.consistency.streakLabel || `${overview.consistency.currentStreak} days`}</strong>
               </span>
-              <span className="percentage-pill consistency-pill">
-                {overview.consistency.score}% Active
-              </span>
+              <span className="momentum-chip">{overview.consistency.score}% Consistency</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ============================================================
-          SECTION 2: CORE ANALYTICS KPI CARDS
-         ============================================================ */}
+      {/* 3. Core Analytics KPI Grid (6 Animated Metric Cards) */}
       <div className="analytics-kpi-grid">
-        {/* KPI 1: Daily Study Time (Today) */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble cyan">⚡</span>
-            <span className="kpi-tag">Daily</span>
+        {/* KPI 1: Daily Focus */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble cyan">
+              <ClockIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill cyan">Today</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">
-              {metrics.dailyStudyTime?.todayHours || 0}
-              <small> hrs</small>
-            </span>
+          <div className="kpi-big-number">
+            {metrics.dailyStudyTime?.todayHours || 0}
+            <small> hrs</small>
           </div>
-          <div className="kpi-sub-text">
-            <strong>{metrics.dailyStudyTime?.todayMinutes || 0} mins</strong> studied today across{" "}
-            {metrics.dailyStudyTime?.todaySessions || 0} session(s)
-          </div>
-          <div className="kpi-trend-bar">
+          <p className="kpi-detail-text">
+            <strong>{metrics.dailyStudyTime?.todayMinutes || 0} mins</strong> recorded across {metrics.dailyStudyTime?.todaySessions || 0} session(s)
+          </p>
+          <div className="kpi-glow-bar">
             <div
-              className="kpi-trend-fill cyan"
+              className="kpi-glow-fill cyan"
               style={{
                 width: `${Math.min(
                   100,
@@ -312,47 +368,47 @@ Keep grinding! 🚀`;
           </div>
         </div>
 
-        {/* KPI 2: Weekly Study Time */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble purple">📅</span>
-            <span className="kpi-tag">Weekly</span>
+        {/* KPI 2: Weekly Total */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble purple">
+              <CalendarIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill purple">Weekly Goal</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">
-              {metrics.weeklyStudyTime?.weekHours || 0}
-              <small> / {metrics.weeklyStudyTime?.weeklyGoalHours || 15}h</small>
-            </span>
+          <div className="kpi-big-number">
+            {metrics.weeklyStudyTime?.weekHours || 0}
+            <small> / {metrics.weeklyStudyTime?.weeklyGoalHours || 15}h</small>
           </div>
-          <div className="kpi-sub-text">
-            <strong>{overview.study.percentage}%</strong> of {overview.weeklyStudyGoalHours || 15}h weekly study target achieved
-          </div>
-          <div className="kpi-trend-bar">
+          <p className="kpi-detail-text">
+            <strong>{overview.study.percentage}%</strong> of weekly study quota completed
+          </p>
+          <div className="kpi-glow-bar">
             <div
-              className="kpi-trend-fill purple"
+              className="kpi-glow-fill purple"
               style={{ width: `${Math.min(100, overview.study.percentage)}%` }}
             ></div>
           </div>
         </div>
 
-        {/* KPI 3: Tasks Completed */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble green">✅</span>
-            <span className="kpi-tag">Tasks Done</span>
+        {/* KPI 3: Resolved Tasks */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble green">
+              <CheckIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill green">Resolved</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">
-              {metrics.taskMetrics?.completed || 0}
-              <small> / {metrics.taskMetrics?.total || 0}</small>
-            </span>
+          <div className="kpi-big-number">
+            {metrics.taskMetrics?.completed || 0}
+            <small> / {metrics.taskMetrics?.total || 0}</small>
           </div>
-          <div className="kpi-sub-text">
-            <strong>{metrics.taskMetrics?.completed || 0}</strong> tasks resolved successfully
-          </div>
-          <div className="kpi-trend-bar">
+          <p className="kpi-detail-text">
+            <strong>{metrics.taskMetrics?.completed || 0} tasks</strong> finished on schedule
+          </p>
+          <div className="kpi-glow-bar">
             <div
-              className="kpi-trend-fill green"
+              className="kpi-glow-fill green"
               style={{
                 width: `${
                   metrics.taskMetrics?.total > 0
@@ -366,22 +422,24 @@ Keep grinding! 🚀`;
           </div>
         </div>
 
-        {/* KPI 4: Tasks Pending */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble orange">⏳</span>
-            <span className="kpi-tag">Pending</span>
+        {/* KPI 4: Pending Tasks */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble amber">
+              <TasksIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill amber">In Pipeline</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">{metrics.taskMetrics?.pending || 0}</span>
+          <div className="kpi-big-number">
+            {metrics.taskMetrics?.pending || 0}
+            <small> tasks</small>
           </div>
-          <div className="kpi-sub-text">
-            <strong>{metrics.taskMetrics?.inProgress || 0} in-progress</strong>,{" "}
-            {metrics.taskMetrics?.todo || 0} to-do
-          </div>
-          <div className="kpi-trend-bar">
+          <p className="kpi-detail-text">
+            <strong>{metrics.taskMetrics?.inProgress || 0}</strong> active, {metrics.taskMetrics?.todo || 0} queued
+          </p>
+          <div className="kpi-glow-bar">
             <div
-              className="kpi-trend-fill orange"
+              className="kpi-glow-fill amber"
               style={{
                 width: `${
                   metrics.taskMetrics?.total > 0
@@ -395,59 +453,60 @@ Keep grinding! 🚀`;
           </div>
         </div>
 
-        {/* KPI 5: Completion Rate */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble emerald">🎯</span>
-            <span className="kpi-tag">Rate</span>
+        {/* KPI 5: Execution Efficiency */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble emerald">
+              <TargetIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill emerald">Efficiency</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">
-              {metrics.taskMetrics?.completionRate || 0}
-              <small>%</small>
-            </span>
+          <div className="kpi-big-number">
+            {metrics.taskMetrics?.completionRate || 0}
+            <small>%</small>
           </div>
-          <div className="kpi-sub-text">
-            Overall student task execution efficiency
-          </div>
-          <div className="kpi-trend-bar">
+          <p className="kpi-detail-text">
+            Overall student execution efficiency rate
+          </p>
+          <div className="kpi-glow-bar">
             <div
-              className="kpi-trend-fill emerald"
+              className="kpi-glow-fill emerald"
               style={{ width: `${metrics.taskMetrics?.completionRate || 0}%` }}
             ></div>
           </div>
         </div>
 
-        {/* KPI 6: Total Lifetime Focus */}
-        <div className="card analytics-kpi-card">
-          <div className="kpi-header-row">
-            <span className="kpi-icon-bubble blue">🏆</span>
-            <span className="kpi-tag">All-Time</span>
+        {/* KPI 6: Lifetime Dedication */}
+        <div className="card analytics-kpi-card hover-lift">
+          <div className="kpi-top-line">
+            <div className="kpi-icon-bubble blue">
+              <TrophyIcon size={16} />
+            </div>
+            <span className="kpi-badge-pill blue">All-Time</span>
           </div>
-          <div className="kpi-main-stat">
-            <span className="kpi-number">
-              {metrics.allTimeStudyTime?.totalHours || 0}
-              <small> hrs</small>
-            </span>
+          <div className="kpi-big-number">
+            {metrics.allTimeStudyTime?.totalHours || 0}
+            <small> hrs</small>
           </div>
-          <div className="kpi-sub-text">
-            Across <strong>{metrics.allTimeStudyTime?.totalSessions || 0}</strong> focus sessions
-          </div>
-          <div className="kpi-trend-bar">
-            <div className="kpi-trend-fill blue" style={{ width: "100%" }}></div>
+          <p className="kpi-detail-text">
+            Across <strong>{metrics.allTimeStudyTime?.totalSessions || 0}</strong> total focus sessions
+          </p>
+          <div className="kpi-glow-bar">
+            <div className="kpi-glow-fill blue" style={{ width: "100%" }}></div>
           </div>
         </div>
       </div>
 
-      {/* ============================================================
-          SECTION 3: VISUAL CHARTS & BREAKDOWNS (2 COLUMN GRID)
-         ============================================================ */}
+      {/* 4. Interactive Charts Grid */}
       <div className="analytics-charts-grid">
-        {/* Left Chart: Daily Study Time (Past 7 Days Bar Chart) */}
+        {/* Left Chart: Daily Study Trend (Interactive Bar Columns) */}
         <div className="card analytics-chart-card">
           <div className="chart-card-header">
             <div>
-              <h3 className="chart-card-title">📊 Daily Study Time Trend</h3>
+              <div className="chart-title-row">
+                <div className="chart-header-dot cyan"></div>
+                <h3 className="chart-card-title">Daily Study Time Trend</h3>
+              </div>
               <p className="chart-card-subtitle">
                 Focus minutes recorded per day across the past 7 days.
               </p>
@@ -465,15 +524,21 @@ Keep grinding! 🚀`;
             ) : (
               dailyTrend.map((day, idx) => {
                 const barHeightPercent = Math.max(
-                  6,
+                  8,
                   Math.min(100, Math.round((day.minutes / maxTrendMins) * 100))
                 );
                 const isToday =
                   new Date().toISOString().slice(0, 10) === day.date;
+                const isHovered = hoveredBarIndex === idx;
 
                 return (
-                  <div key={idx} className="chart-bar-col">
-                    <div className="bar-val-tooltip">
+                  <div
+                    key={idx}
+                    className={`chart-bar-col ${isHovered ? "hovered" : ""}`}
+                    onMouseEnter={() => setHoveredBarIndex(idx)}
+                    onMouseLeave={() => setHoveredBarIndex(null)}
+                  >
+                    <div className={`bar-val-tooltip ${isHovered ? "visible" : ""}`}>
                       <strong>{day.hours}h</strong>
                       <span>({day.minutes}m)</span>
                     </div>
@@ -481,8 +546,10 @@ Keep grinding! 🚀`;
                     <div className="bar-track">
                       <div
                         className={`bar-fill ${isToday ? "today-bar" : ""}`}
-                        style={{ height: `${day.minutes === 0 ? 4 : barHeightPercent}%` }}
-                      ></div>
+                        style={{ height: `${day.minutes === 0 ? 6 : barHeightPercent}%` }}
+                      >
+                        <div className="bar-glow-cap"></div>
+                      </div>
                     </div>
 
                     <div className="bar-label-group">
@@ -509,19 +576,28 @@ Keep grinding! 🚀`;
                   (metrics.weeklyStudyTime?.weekHours || 0) /
                   Math.max(1, overview.consistency.activeDaysThisWeek || 1)
                 ).toFixed(1)}{" "}
-                hrs/active day
+                hrs/day
               </strong>
             </div>
+            {topDay && topDay.minutes > 0 && (
+              <div className="footer-metric-pill highlight">
+                <span>Peak Day:</span>
+                <strong>{topDay.dayName} ({topDay.hours}h)</strong>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Chart: Subject-wise Study Time Distribution */}
+        {/* Right Chart: Subject-Wise Study Distribution */}
         <div className="card analytics-chart-card">
           <div className="chart-card-header">
             <div>
-              <h3 className="chart-card-title">📚 Subject-Wise Study Time</h3>
+              <div className="chart-title-row">
+                <div className="chart-header-dot purple"></div>
+                <h3 className="chart-card-title">Subject-Wise Study Time</h3>
+              </div>
               <p className="chart-card-subtitle">
-                MongoDB aggregation breakdown of focus allocation per subject.
+                Focus allocation breakdown across enrolled academic subjects.
               </p>
             </div>
             <div className="chart-legend-badge">
@@ -550,11 +626,11 @@ Keep grinding! 🚀`;
           <div className="subject-analytics-list">
             {subjectBreakdown.length === 0 ? (
               <div className="empty-chart-notice">
-                No subject study sessions recorded yet. Start a focus session in the Study Engine to see breakdown!
+                No subject study sessions recorded yet. Start a focus session in the Focus Study Engine to see breakdown!
               </div>
             ) : (
               subjectBreakdown.map((sub, idx) => (
-                <div key={idx} className="subject-analytics-row">
+                <div key={idx} className="subject-analytics-row hover-lift">
                   <div className="subject-info-col">
                     <div className="subject-title-line">
                       <span
@@ -594,14 +670,46 @@ Keep grinding! 🚀`;
         </div>
       </div>
 
-      {/* ============================================================
-          GOALS CONFIGURATION MODAL
-         ============================================================ */}
+      {/* 5. Smart Study Velocity & Insights Callout */}
+      <div className="card analytics-insight-callout">
+        <div className="insight-callout-left">
+          <div className="insight-icon-pulse">
+            <StarIcon size={20} filled={true} />
+          </div>
+          <div>
+            <h4 className="insight-callout-title">Study Velocity & Consistency Insights</h4>
+            <p className="insight-callout-text">
+              {overview.consistency.activeDaysThisWeek >= 5
+                ? "Outstanding momentum! You've maintained high study consistency this week. Keep this rhythm to lock in all Milestone achievements."
+                : overview.consistency.activeDaysThisWeek >= 2
+                ? "Good steady progress! Add a quick 25-minute Pomodoro session today to reach your weekly study targets."
+                : "Kickstart your weekly momentum! Launch a deep focus session from the Study Engine or complete a pending task."}
+            </p>
+          </div>
+        </div>
+        <div className="insight-callout-right">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm glossy-btn"
+            onClick={() => setShowGoalModal(true)}
+          >
+            <TargetIcon size={14} />
+            <span>Customize Weekly Targets</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 6. Goals Configuration Modal */}
       {showGoalModal && (
         <div className="modal-backdrop animate-fade-in">
           <div className="modal-content card animate-scale-in" style={{ maxWidth: "480px" }}>
             <div className="modal-header">
-              <h3>🎯 Customize Weekly Study Goals</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(170, 59, 255, 0.12)", color: "#aa3bff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <TargetIcon size={18} />
+                </div>
+                <h3 style={{ margin: 0 }}>Customize Study Goals</h3>
+              </div>
               <button
                 type="button"
                 className="modal-close-btn"
@@ -628,7 +736,7 @@ Keep grinding! 🚀`;
                   required
                 />
                 <small className="form-hint">
-                  Recommended: 15 hours per week (e.g. 12.4 / 15 hrs).
+                  Recommended: 15 hours per week (approx. 2.1 hrs / active day).
                 </small>
               </div>
 
@@ -648,7 +756,7 @@ Keep grinding! 🚀`;
                   required
                 />
                 <small className="form-hint">
-                  Recommended: 28 tasks per week (e.g. 23 / 28).
+                  Recommended: 28 tasks per week (approx. 4 tasks / day).
                 </small>
               </div>
 

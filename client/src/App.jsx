@@ -9,6 +9,13 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import GamificationEngine from "./components/GamificationEngine";
 import HomeDashboard from "./components/HomeDashboard";
 import Sidebar from "./components/Sidebar";
+import CalendarModal from "./components/CalendarModal";
+import UpcomingEventsModal from "./components/UpcomingEventsModal";
+import StarredTasksModal from "./components/StarredTasksModal";
+import QuickAddResourceModal from "./components/QuickAddResourceModal";
+import QuickFocusSessionModal from "./components/QuickFocusSessionModal";
+import NavbarProfileDropdown from "./components/NavbarProfileDropdown";
+import { BookOpenIcon, TasksIcon, ClockIcon, TrophyIcon, AnalyticsIcon } from "./components/Icons";
 
 const API_BASE = "http://localhost:5000";
 
@@ -28,9 +35,6 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Sidebar State (false = symbols only, true = symbols + names)
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
-
   // Auth Form State (Gateway Landing)
   const [authFormData, setAuthFormData] = useState({
     name: "",
@@ -44,7 +48,19 @@ function App() {
   });
 
   // Active Main Navigation Tab (Default is 'home' on login)
-  const [activeTab, setActiveTab] = useState("home"); // 'home', 'workspace', 'tasks', 'study', 'analytics'
+  const [activeTab, setActiveTab] = useState("home"); // 'home', 'workspace', 'tasks', 'study', 'gamification', 'analytics'
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  // Action & Modal States
+  const [showNavbarProfileDropdown, setShowNavbarProfileDropdown] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showUpcomingEventsModal, setShowUpcomingEventsModal] = useState(false);
+  const [showStarredTasksModal, setShowStarredTasksModal] = useState(false);
+  const [showQuickResourceModal, setShowQuickResourceModal] = useState(false);
+  const [showQuickFocusModal, setShowQuickFocusModal] = useState(false);
+  const [taskTriggerAdd, setTaskTriggerAdd] = useState(0);
+  const [studyTriggerCustom, setStudyTriggerCustom] = useState(0);
 
   // Theme State ('dark' or 'light')
   const [theme, setTheme] = useState(() => localStorage.getItem("studex_theme") || "dark");
@@ -57,9 +73,6 @@ function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
-
-  // Profile Modal State
-  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Check Backend Health
   const checkHealth = useCallback(() => {
@@ -120,6 +133,47 @@ function App() {
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, [checkHealth, token, fetchUserProfile]);
+
+  // Global Smooth Scroll Reveal Observer
+  useEffect(() => {
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+        } else {
+          if (entry.boundingClientRect.top > window.innerHeight) {
+            entry.target.classList.remove("is-visible");
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      threshold: 0.08,
+      rootMargin: "0px 0px -30px 0px",
+    });
+
+    const scanAndObserve = () => {
+      const elements = document.querySelectorAll(
+        ".card, .home-glance-item, .home-section, .analytics-momentum-card, .analytics-chart-container, .task-card, .analytics-kpi-card, .notes-card, .subject-card, .resource-item-card"
+      );
+      elements.forEach((el) => {
+        if (!el.classList.contains("reveal-on-scroll")) {
+          el.classList.add("reveal-on-scroll");
+        }
+        observer.observe(el);
+      });
+    };
+
+    scanAndObserve();
+    const timerId = setTimeout(scanAndObserve, 350);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timerId);
+    };
+  }, [activeTab, currentUser]);
 
   // Auth Gateway Submit
   const handleAuthSubmit = async (e) => {
@@ -212,90 +266,129 @@ function App() {
           currentUser={currentUser}
           onOpenProfile={() => setShowProfileModal(true)}
           onLogout={handleLogout}
-          serverHealth={serverHealth}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onOpenAddResource={() => {
+            setActiveTab("workspace");
+            setShowQuickResourceModal(true);
+          }}
+          onOpenAddTask={() => {
+            setActiveTab("tasks");
+            setTaskTriggerAdd((p) => p + 1);
+          }}
+          onOpenAddFocusSession={() => setShowQuickFocusModal(true)}
+          onOpenStarredTasks={() => setShowStarredTasksModal(true)}
+          onOpenCalendar={() => setShowCalendarModal(true)}
+          onOpenUpcomingEvents={() => setShowUpcomingEventsModal(true)}
         />
       )}
 
       <div className="studex-app">
         {/* Header */}
         <header className="studex-header">
-          <div className="brand-group">
-            {currentUser && (
-              <button
-                type="button"
-                className="header-sidebar-toggle-btn"
-                onClick={() => setSidebarExpanded((prev) => !prev)}
-                title={sidebarExpanded ? "Collapse Sidebar (Show symbols only)" : "Expand Sidebar (Show feature names)"}
-              >
-                {sidebarExpanded ? "◀" : "☰"}
-              </button>
-            )}
-            <div className="brand-logo" onClick={() => currentUser && setActiveTab("home")} style={{ cursor: "pointer" }}>
-              SX
-            </div>
+          {/* Left Side: Brand Logo & Title */}
+          <div
+            className="brand-group"
+            onClick={() => currentUser && setActiveTab("home")}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="brand-logo">SX</div>
             <div>
-              <h1 className="brand-title" onClick={() => currentUser && setActiveTab("home")} style={{ cursor: "pointer" }}>
-                Studex
-              </h1>
+              <h1 className="brand-title">Studex</h1>
               <p className="brand-subtitle">Academic Workspace & Student Network</p>
             </div>
           </div>
 
-          {/* Right Header Status & Controls */}
-          <div className="header-right-controls">
-            {/* Global Theme Toggle Button */}
-            <button
-              type="button"
-              className="header-theme-toggle-btn"
-              onClick={toggleTheme}
-              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
-              aria-label="Toggle Color Theme"
-            >
-              <span className="theme-toggle-icon">{theme === "dark" ? "☀️" : "🌙"}</span>
-              <span className="theme-toggle-label">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            </button>
-
-            <div className="status-container">
-              <div className={`status-badge ${serverHealth.status}`}>
-                <span className="dot"></span>
-                <span>Server: {serverHealth.status.toUpperCase()}</span>
-              </div>
-              <div
-                className={`status-badge ${
-                  serverHealth.database === "connected" ? "online" : "warning"
-                }`}
+          {/* Right Side (Strict Left-to-Right Order): Feature Links + Profile Avatar */}
+          {currentUser ? (
+            <div className="navbar-right-container">
+              {/* 1. Academic Workspace */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "workspace" ? "active" : ""}`}
+                onClick={() => setActiveTab("workspace")}
+                title="Academic Workspace (Subjects & Resources)"
               >
-                <span className="dot"></span>
-                <span>DB: {serverHealth.database.toUpperCase()}</span>
-              </div>
-            </div>
+                <span className="nav-feature-icon"><BookOpenIcon size={16} /></span>
+                <span className="nav-feature-label">Academic Workspace</span>
+              </button>
 
-            {currentUser && (
-              <div className="user-profile-menu">
+              {/* 2. Task Engine */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "tasks" ? "active" : ""}`}
+                onClick={() => setActiveTab("tasks")}
+                title="Task Engine (Daily & Priority Tasks)"
+              >
+                <span className="nav-feature-icon"><TasksIcon size={16} /></span>
+                <span className="nav-feature-label">Task Engine</span>
+              </button>
+
+              {/* 3. Focus Study Engine */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "study" ? "active" : ""}`}
+                onClick={() => setActiveTab("study")}
+                title="Focus Study Engine (Pomodoro & Session Timer)"
+              >
+                <span className="nav-feature-icon"><ClockIcon size={16} /></span>
+                <span className="nav-feature-label">Focus Study Engine</span>
+              </button>
+
+              {/* 4. Gamification & Streaks */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "gamification" ? "active" : ""}`}
+                onClick={() => setActiveTab("gamification")}
+                title="Gamification & Streaks (Momentum, Badges & Level)"
+              >
+                <span className="nav-feature-icon"><TrophyIcon size={16} /></span>
+                <span className="nav-feature-label">Gamification & Streaks</span>
+              </button>
+
+              {/* 5. Analytics & Progress Tracking */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "analytics" ? "active" : ""}`}
+                onClick={() => setActiveTab("analytics")}
+                title="Analytics & Progress Tracking (Study Goals, Velocity & Trends)"
+              >
+                <span className="nav-feature-icon"><AnalyticsIcon size={16} /></span>
+                <span className="nav-feature-label">Analytics & Progress</span>
+              </button>
+
+              {/* 6. Profile Avatar Only (No text name next to it) */}
+              <div className="navbar-profile-wrapper">
                 <button
-                  className="user-profile-btn"
-                  onClick={() => setShowProfileModal(true)}
-                  title="View Student Profile"
+                  type="button"
+                  className={`navbar-avatar-btn ${showNavbarProfileDropdown ? "active" : ""}`}
+                  onClick={() => setShowNavbarProfileDropdown((prev) => !prev)}
+                  title="Student Profile & System Status"
+                  aria-label="Account Menu"
                 >
                   <img
                     src={avatarUrl}
                     alt={currentUser.name}
-                    className="header-avatar"
+                    className="navbar-avatar-img"
                   />
-                  <span className="user-name-text">{currentUser.name}</span>
                 </button>
-                <button
-                  className="btn btn-secondary btn-sm btn-danger-outline"
-                  onClick={handleLogout}
-                  title="Logout"
-                >
-                  🚪 Logout
-                </button>
+
+                {/* Profile Dropdown Panel (DB, Server Status, Profile link - no logout) */}
+                <NavbarProfileDropdown
+                  isOpen={showNavbarProfileDropdown}
+                  onClose={() => setShowNavbarProfileDropdown(false)}
+                  currentUser={currentUser}
+                  serverHealth={serverHealth}
+                  onOpenProfileModal={() => setShowProfileModal(true)}
+                />
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="navbar-auth-notice">
+              <span className="dot online"></span>
+              <span>Studex Portal Active</span>
+            </div>
+          )}
         </header>
 
       {/* Main Content Area */}
@@ -582,6 +675,7 @@ function App() {
                   apiBase={API_BASE}
                   onError={(msg) => setActionFeedback(`Error: ${msg}`)}
                   onFeedback={(msg) => setActionFeedback(msg)}
+                  triggerAdd={taskTriggerAdd}
                 />
               </div>
             )}
@@ -594,6 +688,7 @@ function App() {
                   apiBase={API_BASE}
                   onError={(msg) => setActionFeedback(`Error: ${msg}`)}
                   onFeedback={(msg) => setActionFeedback(msg)}
+                  triggerCustom={studyTriggerCustom}
                 />
               </div>
             )}
@@ -640,6 +735,59 @@ function App() {
         apiBase={API_BASE}
         onProfileUpdated={(updated) => setCurrentUser(updated)}
         onLogout={handleLogout}
+      />
+
+      {/* Academic Calendar Modal */}
+      <CalendarModal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        token={token}
+        apiBase={API_BASE}
+        onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+        onFeedback={(msg) => setActionFeedback(msg)}
+        onOpenUpcoming={() => setShowUpcomingEventsModal(true)}
+      />
+
+      {/* Consolidated Upcoming Events & Deadlines Modal */}
+      <UpcomingEventsModal
+        isOpen={showUpcomingEventsModal}
+        onClose={() => setShowUpcomingEventsModal(false)}
+        token={token}
+        apiBase={API_BASE}
+        onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+        onFeedback={(msg) => setActionFeedback(msg)}
+        onOpenCalendar={() => setShowCalendarModal(true)}
+      />
+
+      {/* Starred / Important Tasks Modal */}
+      <StarredTasksModal
+        isOpen={showStarredTasksModal}
+        onClose={() => setShowStarredTasksModal(false)}
+        token={token}
+        apiBase={API_BASE}
+        onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+        onFeedback={(msg) => setActionFeedback(msg)}
+        onNavigateToTasks={() => setActiveTab("tasks")}
+      />
+
+      {/* Quick Pin Resource with Subject Selector Modal */}
+      <QuickAddResourceModal
+        isOpen={showQuickResourceModal}
+        onClose={() => setShowQuickResourceModal(false)}
+        token={token}
+        apiBase={API_BASE}
+        onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+        onFeedback={(msg) => setActionFeedback(msg)}
+      />
+
+      {/* Quick Focus Session Modal (Customisation, Start, Subject Option) */}
+      <QuickFocusSessionModal
+        isOpen={showQuickFocusModal}
+        onClose={() => setShowQuickFocusModal(false)}
+        token={token}
+        apiBase={API_BASE}
+        onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+        onFeedback={(msg) => setActionFeedback(msg)}
       />
       </div>
     </div>

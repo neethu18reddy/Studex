@@ -42,6 +42,10 @@ const taskSchema = new mongoose.Schema(
       default: 30,
       min: [1, "Estimated duration must be at least 1 minute"],
     },
+    isStarred: {
+      type: Boolean,
+      default: false,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -56,6 +60,8 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+taskSchema.index({ user: 1, isStarred: 1 });
 
 // Compound index for querying user tasks by deadline and status
 taskSchema.index({ user: 1, status: 1, deadline: 1 });

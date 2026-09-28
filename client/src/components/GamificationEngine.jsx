@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import ShareableStreakCardModal from "./ShareableStreakCardModal";
+import {
+  TrophyIcon,
+  StarIcon,
+  ClockIcon,
+  CalendarIcon,
+  CheckIcon,
+  TasksIcon,
+  XIcon,
+  SunIcon,
+} from "./Icons";
 
 export default function GamificationEngine({
   token,
@@ -65,7 +75,7 @@ export default function GamificationEngine({
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to update targets");
       }
-      onFeedback?.("Daily and weekly streak goals saved! 🎯");
+      onFeedback?.("Daily and weekly streak goals saved!");
       setShowTargetModal(false);
       fetchStreakData();
     } catch (err) {
@@ -77,16 +87,15 @@ export default function GamificationEngine({
 
   if (loading) {
     return (
-      <div className="gamification-loading-pane">
-        <div className="spinner"></div>
-        <p>Loading your Gamification & Streak Dashboard...</p>
+      <div className="loading-box">
+        Loading Gamification & Streak Dashboard...
       </div>
     );
   }
 
   const daily = streakData?.dailyStreak || {
     count: 0,
-    label: "🔥 0 Day Streak",
+    label: "0 Day Streak",
     targetMinutes: 45,
     todayMinutes: 0,
     todayPercentage: 0,
@@ -96,7 +105,7 @@ export default function GamificationEngine({
 
   const weekly = streakData?.weeklyStreak || {
     count: 0,
-    label: "🏆 0 Week Goal Streak",
+    label: "0 Week Goal Streak",
     targetHours: 15,
     thisWeekHours: 0,
     thisWeekPercentage: 0,
@@ -119,30 +128,30 @@ export default function GamificationEngine({
   });
 
   return (
-    <div className="gamification-engine-container animate-fade-in">
+    <div className="gamification-engine-container">
       {/* Header */}
-      <div className="gamification-header-row">
+      <div className="workspace-header">
         <div>
-          <h2 className="gamification-main-title">🏆 Gamification & Streak Engine</h2>
-          <p className="gamification-subtitle">
-            Build unstoppable momentum with daily target streaks, weekly goal mastery, unlockable achievement badges, and shareable streak cards.
+          <h2>Gamification & Streaks</h2>
+          <p className="section-desc">
+            Build study momentum with daily target streaks, weekly mastery, and unlockable achievements.
           </p>
         </div>
 
-        <div className="gamification-actions">
+        <div className="subject-action-buttons">
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => setShowTargetModal(true)}
           >
-            🎯 Adjust Streak Goals
+            <TasksIcon size={14} /> Adjust Goals
           </button>
           <button
             type="button"
-            className="btn btn-primary btn-sm btn-generate-card"
+            className="btn btn-primary btn-sm"
             onClick={() => setShowShareModal(true)}
           >
-            ✨ Shareable Streak Card
+            <TrophyIcon size={14} /> Shareable Card
           </button>
         </div>
       </div>
@@ -152,12 +161,14 @@ export default function GamificationEngine({
          ============================================================ */}
       <div className="streak-hero-showcase-grid">
         {/* Daily Streak Card */}
-        <div className="card streak-hero-card daily-streak-card">
+        <div className="card streak-hero-card">
           <div className="streak-card-top">
-            <div className="streak-icon-wrap flame-wrap">🔥</div>
+            <div className="kpi-icon-wrap pending">
+              <SunIcon size={22} />
+            </div>
             <div className="streak-info-col">
               <span className="streak-kicker">DAILY TARGET STREAK</span>
-              <h3 className="streak-title-val">{daily.label}</h3>
+              <h3 className="streak-title-val">{daily.count} {daily.count === 1 ? "Day" : "Days"}</h3>
             </div>
             <span className="streak-badge-longest">Best: {daily.longest}d</span>
           </div>
@@ -167,7 +178,7 @@ export default function GamificationEngine({
               <span>Today's Target Progress:</span>
               <strong>
                 {daily.todayMinutes} / {daily.targetMinutes} mins{" "}
-                {daily.isTargetMetToday ? "✅ (Target Met!)" : `(${daily.todayPercentage}%)`}
+                {daily.isTargetMetToday ? "(Target Met!)" : `(${daily.todayPercentage}%)`}
               </strong>
             </div>
             <div className="streak-progress-track">
@@ -180,21 +191,23 @@ export default function GamificationEngine({
 
           <div className="streak-card-footer">
             <span className="streak-footer-desc">
-              Complete {daily.targetMinutes}m of deep study today to advance your streak!
+              Target: {daily.targetMinutes}m daily focus
             </span>
-            <span className="streak-status-tag">
-              {daily.isTargetMetToday ? "🔥 Streak Active Today" : "⏳ Study Target Pending"}
+            <span className={`streak-status-tag ${daily.isTargetMetToday ? "active" : ""}`}>
+              {daily.isTargetMetToday ? "Target Met Today" : "Target Pending"}
             </span>
           </div>
         </div>
 
         {/* Weekly Streak Card */}
-        <div className="card streak-hero-card weekly-streak-card">
+        <div className="card streak-hero-card">
           <div className="streak-card-top">
-            <div className="streak-icon-wrap trophy-wrap">🏆</div>
+            <div className="kpi-icon-wrap completed">
+              <TrophyIcon size={22} />
+            </div>
             <div className="streak-info-col">
               <span className="streak-kicker">WEEKLY GOAL STREAK</span>
-              <h3 className="streak-title-val">{weekly.label}</h3>
+              <h3 className="streak-title-val">{weekly.count} {weekly.count === 1 ? "Week" : "Weeks"}</h3>
             </div>
             <span className="streak-badge-longest">Goal: {weekly.targetHours}h/wk</span>
           </div>
@@ -204,7 +217,7 @@ export default function GamificationEngine({
               <span>Current Week Progress:</span>
               <strong>
                 {weekly.thisWeekHours} / {weekly.targetHours} hrs{" "}
-                {weekly.isTargetMetThisWeek ? "✅ (Goal Met!)" : `(${weekly.thisWeekPercentage}%)`}
+                {weekly.isTargetMetThisWeek ? "(Goal Met!)" : `(${weekly.thisWeekPercentage}%)`}
               </strong>
             </div>
             <div className="streak-progress-track">
@@ -217,10 +230,10 @@ export default function GamificationEngine({
 
           <div className="streak-card-footer">
             <span className="streak-footer-desc">
-              Reach your {weekly.targetHours}h weekly goal to sustain your championship streak!
+              Target: {weekly.targetHours}h weekly focus
             </span>
-            <span className="streak-status-tag">
-              {weekly.isTargetMetThisWeek ? "🏆 Goal Reached" : "📈 In Progress"}
+            <span className={`streak-status-tag ${weekly.isTargetMetThisWeek ? "active" : ""}`}>
+              {weekly.isTargetMetThisWeek ? "Goal Met" : "In Progress"}
             </span>
           </div>
         </div>
@@ -231,16 +244,18 @@ export default function GamificationEngine({
          ============================================================ */}
       <div className="card student-rank-xp-card">
         <div className="rank-left-details">
-          <div className="rank-badge-bubble">⭐</div>
+          <div className="rank-level-badge">
+            <StarIcon size={18} filled={true} />
+            <span>Lv. {gamification.level}</span>
+          </div>
           <div>
             <div className="rank-tier-line">
-              <strong className="rank-level-text">LEVEL {gamification.level}</strong>
               <span className="rank-title-tag">{gamification.rankTitle}</span>
+              <span className="rank-xp-highlight">{gamification.totalXP.toLocaleString()} XP</span>
             </div>
-            <p className="rank-xp-subtitle">
-              Total XP Earned: <strong>{gamification.totalXP.toLocaleString()} XP</strong> &bull;{" "}
-              {gamification.unlockedBadgesCount} / {gamification.totalBadgesCount} Badges Unlocked
-            </p>
+            <span className="rank-xp-subtitle">
+              {gamification.unlockedBadgesCount} of {gamification.totalBadgesCount} Badges Unlocked
+            </span>
           </div>
         </div>
 
@@ -262,51 +277,29 @@ export default function GamificationEngine({
           3. ACHIEVEMENT & STREAK BADGES ARENA
          ============================================================ */}
       <div className="card badges-arena-card">
-        <div className="badges-header-row">
+        <div className="workspace-controls-bar">
           <div>
-            <h3 className="badges-arena-title">🎖️ Streak Badges & Achievements</h3>
-            <p className="badges-arena-subtitle">
-              Earn exclusive badges by sustaining daily focus and crushing study goals.
-            </p>
+            <h3 className="badges-arena-title">Streak Badges & Achievements</h3>
           </div>
 
           {/* Badge Category Filter Chips */}
-          <div className="badge-filter-chips">
-            <button
-              type="button"
-              className={`badge-chip ${activeBadgeCategory === "all" ? "active" : ""}`}
-              onClick={() => setActiveBadgeCategory("all")}
-            >
-              All Badges ({gamification.badges.length})
-            </button>
-            <button
-              type="button"
-              className={`badge-chip ${activeBadgeCategory === "daily" ? "active" : ""}`}
-              onClick={() => setActiveBadgeCategory("daily")}
-            >
-              🔥 Daily Streaks
-            </button>
-            <button
-              type="button"
-              className={`badge-chip ${activeBadgeCategory === "weekly" ? "active" : ""}`}
-              onClick={() => setActiveBadgeCategory("weekly")}
-            >
-              🏆 Weekly Goals
-            </button>
-            <button
-              type="button"
-              className={`badge-chip ${activeBadgeCategory === "focus" ? "active" : ""}`}
-              onClick={() => setActiveBadgeCategory("focus")}
-            >
-              ⚡ Focus Hours
-            </button>
-            <button
-              type="button"
-              className={`badge-chip ${activeBadgeCategory === "tasks" ? "active" : ""}`}
-              onClick={() => setActiveBadgeCategory("tasks")}
-            >
-              🎯 Tasks
-            </button>
+          <div className="workspace-view-tabs">
+            {[
+              { id: "all", label: `All (${gamification.badges.length})` },
+              { id: "daily", label: "Daily Streaks" },
+              { id: "weekly", label: "Weekly Goals" },
+              { id: "focus", label: "Focus Hours" },
+              { id: "tasks", label: "Tasks" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`workspace-tab-btn ${activeBadgeCategory === tab.id ? "active" : ""}`}
+                onClick={() => setActiveBadgeCategory(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -319,7 +312,11 @@ export default function GamificationEngine({
             >
               <div className="badge-icon-wrapper">
                 <span className="badge-main-icon">{badge.icon}</span>
-                {badge.unlocked && <span className="badge-check-dot">✓</span>}
+                {badge.unlocked && (
+                  <span className="badge-check-dot">
+                    <CheckIcon size={10} />
+                  </span>
+                )}
               </div>
 
               <div className="badge-tile-body">
@@ -329,11 +326,11 @@ export default function GamificationEngine({
 
               <div className="badge-tile-footer">
                 {badge.unlocked ? (
-                  <span className="badge-unlocked-tag">Unlocked ✨</span>
+                  <span className="badge-unlocked-tag">Unlocked</span>
                 ) : (
                   <div className="badge-lock-progress">
-                    <span>
-                      Progress: {badge.current} / {badge.required}
+                    <span className="badge-progress-text">
+                      {badge.current} / {badge.required}
                     </span>
                     <div className="badge-mini-track">
                       <div
@@ -358,22 +355,23 @@ export default function GamificationEngine({
           TARGET CONFIGURATION MODAL
          ============================================================ */}
       {showTargetModal && (
-        <div className="modal-backdrop animate-fade-in">
-          <div className="modal-card animate-scale-in" style={{ maxWidth: "460px" }}>
+        <div className="modal-backdrop" onClick={() => setShowTargetModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
             <div className="modal-header">
-              <h3>🎯 Streak Study Targets</h3>
+              <h3>Streak Study Targets</h3>
               <button
                 type="button"
                 className="modal-close-btn"
                 onClick={() => setShowTargetModal(false)}
+                title="Close"
               >
-                &times;
+                <XIcon size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleUpdateTargets} className="modal-form">
+            <form onSubmit={handleUpdateTargets}>
               <div className="form-group">
-                <label>Daily Study Target for Streak (Minutes)</label>
+                <label>Daily Study Target (Minutes)</label>
                 <input
                   type="number"
                   min="5"
@@ -387,13 +385,10 @@ export default function GamificationEngine({
                   }
                   required
                 />
-                <small className="form-hint">
-                  Studying at least this many minutes per day counts toward your Daily Streak (e.g. 45 mins).
-                </small>
               </div>
 
               <div className="form-group">
-                <label>Weekly Study Target for Streak (Hours)</label>
+                <label>Weekly Study Target (Hours)</label>
                 <input
                   type="number"
                   min="1"
@@ -407,9 +402,6 @@ export default function GamificationEngine({
                   }
                   required
                 />
-                <small className="form-hint">
-                  Accumulating this many hours per week counts toward your Weekly Goal Streak (e.g. 15 hrs).
-                </small>
               </div>
 
               <div className="modal-actions">

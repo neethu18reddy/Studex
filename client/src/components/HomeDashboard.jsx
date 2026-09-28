@@ -1,5 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import ShareableStreakCardModal from "./ShareableStreakCardModal";
+import {
+  ClockIcon,
+  TasksIcon,
+  BookOpenIcon,
+  AnalyticsIcon,
+  TrophyIcon,
+  StarIcon,
+  CheckIcon,
+  PlusIcon,
+  PlayIcon,
+  PauseIcon,
+  RotateCcwIcon,
+  FileTextIcon,
+  PinIcon,
+  CalendarIcon,
+} from "./Icons";
 
 export default function HomeDashboard({
   token,
@@ -327,7 +343,7 @@ export default function HomeDashboard({
     return (
       <div className="home-dashboard-loading">
         <div className="spinner"></div>
-        <p>Loading your Studex Student Command Center...</p>
+        <p>Loading your dashboard...</p>
       </div>
     );
   }
@@ -339,11 +355,6 @@ export default function HomeDashboard({
          ============================================================ */}
       <section className="home-hero-banner card">
         <div className="home-hero-left">
-          <div className="home-hero-badge">
-            <span className="badge-pulse-dot"></span>
-            <span>STUDENT COMMAND CENTER &bull; {formattedDate}</span>
-          </div>
-
           <h2 className="home-hero-greeting">
             {getGreeting()}, <span className="highlight-name">{currentUser?.name || "Student"}</span>! 👋
           </h2>
@@ -367,40 +378,40 @@ export default function HomeDashboard({
             className="btn btn-primary"
             onClick={() => onNavigateTab("study")}
           >
-            ⏱️ Focus Timer
+            <ClockIcon size={15} /> Focus Timer
           </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => onNavigateTab("tasks")}
           >
-            📋 Manage Tasks
+            <TasksIcon size={15} /> Manage Tasks
           </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => onNavigateTab("workspace")}
           >
-            📚 Workspace
+            <BookOpenIcon size={15} /> Workspace
           </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => onNavigateTab("analytics")}
           >
-            📈 Analytics
+            <AnalyticsIcon size={15} /> Analytics
           </button>
         </div>
       </section>
 
       {/* ============================================================
-          2. THIS WEEK AT A GLANCE (MILESTONE 9 EXECUTIVE PROGRESS)
+          2. THIS WEEK AT A GLANCE
          ============================================================ */}
       <section className="home-week-glance-card card">
         <div className="home-card-header">
           <div className="home-card-title-group">
             <span className="section-kicker">Weekly Momentum</span>
-            <h3 className="home-card-title">📊 This Week at a Glance</h3>
+            <h3 className="home-card-title">This Week at a Glance</h3>
           </div>
           <button
             type="button"
@@ -419,7 +430,7 @@ export default function HomeDashboard({
             title="Click to open Focus Study Engine"
           >
             <div className="glance-item-top">
-              <span className="glance-icon">⏱️</span>
+              <span className="glance-icon"><ClockIcon size={18} /></span>
               <span className="glance-label">Study Time</span>
               <span className="glance-val">{overview.study.formatted}</span>
             </div>
@@ -444,7 +455,7 @@ export default function HomeDashboard({
             title="Click to open Task Engine"
           >
             <div className="glance-item-top">
-              <span className="glance-icon">📋</span>
+              <span className="glance-icon"><TasksIcon size={18} /></span>
               <span className="glance-label">Tasks Finished</span>
               <span className="glance-val">{overview.tasks.formatted}</span>
             </div>
@@ -476,26 +487,23 @@ export default function HomeDashboard({
             title="Click to view Streak & Analytics"
           >
             <div className="glance-item-top">
-              <span className="glance-icon">🔥</span>
+              <span className="glance-icon"><StarIcon size={18} /></span>
               <span className="glance-label">Consistency</span>
-              <span className="glance-streak-pill">{overview.consistency.streakLabel}</span>
+              <span className="glance-val">{overview.consistency.streakLabel || `${overview.consistency.currentStreak || 0} days`}</span>
             </div>
-
-            {/* 7-day mini indicator dots */}
-            <div className="home-mini-consistency-row">
-              {overview.consistency.weekMatrix?.map((day, idx) => (
-                <div
-                  key={idx}
-                  className={`mini-day-dot ${day.active ? "active" : "inactive"} ${
-                    day.isToday ? "today" : ""
-                  }`}
-                  title={`${day.dayName}: ${day.minutes} mins`}
-                >
-                  <span>{day.dayName[0]}</span>
-                </div>
-              ))}
+            <div className="glance-progress-track">
+              <div
+                className="glance-progress-fill consistency-fill"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    Math.round(
+                      ((overview.consistency.activeDaysThisWeek || 0) / 7) * 100
+                    )
+                  )}%`,
+                }}
+              ></div>
             </div>
-
             <div className="glance-item-bottom">
               <span className="glance-subtext">
                 {overview.consistency.activeDaysThisWeek} of 7 days active
@@ -507,13 +515,13 @@ export default function HomeDashboard({
       </section>
 
       {/* ============================================================
-          PHASE 10 & MILESTONE 10: GAMIFICATION & STREAK SPOTLIGHT
+          GAMIFICATION & STREAK SPOTLIGHT
          ============================================================ */}
       <section className="home-streak-spotlight-card card animate-slide-up">
         <div className="home-card-header">
           <div className="home-card-title-group">
             <span className="section-kicker">Streaks & Rewards</span>
-            <h3 className="home-card-title">🔥 Daily & Weekly Streak System</h3>
+            <h3 className="home-card-title">Daily & Weekly Streak System</h3>
           </div>
           <div className="home-streak-header-actions">
             <button
@@ -521,7 +529,7 @@ export default function HomeDashboard({
               className="btn btn-primary btn-sm btn-share-streak-home"
               onClick={() => setShowStreakModal(true)}
             >
-              ✨ Generate Shareable Streak Card
+              <TrophyIcon size={14} /> Generate Shareable Streak Card
             </button>
             <button
               type="button"
@@ -541,11 +549,11 @@ export default function HomeDashboard({
             title="Click to view daily streak details & badges"
           >
             <div className="streak-highlight-header">
-              <span className="streak-bubble-icon flame">🔥</span>
+              <span className="streak-bubble-icon flame"><StarIcon size={20} filled={true} /></span>
               <div className="streak-highlight-text-col">
                 <span className="streak-highlight-kicker">DAILY STUDY TARGET</span>
                 <strong className="streak-highlight-val">
-                  {streakData?.dailyStreak?.label || "🔥 12 Day Streak"}
+                  {streakData?.dailyStreak?.label || "12 Day Streak"}
                 </strong>
               </div>
               <span
@@ -554,8 +562,8 @@ export default function HomeDashboard({
                 }`}
               >
                 {streakData?.dailyStreak?.isTargetMetToday
-                  ? "Target Met Today ✅"
-                  : "Target In Progress ⏳"}
+                  ? "Target Met Today"
+                  : "Target In Progress"}
               </span>
             </div>
 
@@ -588,11 +596,11 @@ export default function HomeDashboard({
             title="Click to view weekly streak details & badges"
           >
             <div className="streak-highlight-header">
-              <span className="streak-bubble-icon trophy">🏆</span>
+              <span className="streak-bubble-icon trophy"><TrophyIcon size={20} /></span>
               <div className="streak-highlight-text-col">
                 <span className="streak-highlight-kicker">WEEKLY GOAL TARGET</span>
                 <strong className="streak-highlight-val">
-                  {streakData?.weeklyStreak?.label || "🏆 4 Week Goal Streak"}
+                  {streakData?.weeklyStreak?.label || "4 Week Goal Streak"}
                 </strong>
               </div>
               <span
@@ -601,8 +609,8 @@ export default function HomeDashboard({
                 }`}
               >
                 {streakData?.weeklyStreak?.isTargetMetThisWeek
-                  ? "Goal Met 🏆"
-                  : "Week In Progress 📈"}
+                  ? "Goal Met"
+                  : "Week In Progress"}
               </span>
             </div>
 
@@ -667,10 +675,10 @@ export default function HomeDashboard({
                 onChange={(e) => setQuickTaskPriority(e.target.value)}
                 className="home-quick-select"
               >
-                <option value="urgent">🔴 Urgent</option>
-                <option value="high">🟠 High</option>
-                <option value="medium">🟡 Medium</option>
-                <option value="low">🟢 Low</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </select>
               {subjects.length > 0 && (
                 <select
@@ -691,7 +699,7 @@ export default function HomeDashboard({
                 className="btn btn-primary btn-sm"
                 disabled={addingTask || !quickTaskTitle.trim()}
               >
-                {addingTask ? "Adding..." : "+ Add"}
+                <PlusIcon size={14} /> {addingTask ? "Adding..." : "Add"}
               </button>
             </form>
 
@@ -699,7 +707,7 @@ export default function HomeDashboard({
             <div className="home-tasks-list">
               {pendingTasksList.length === 0 ? (
                 <div className="empty-home-state">
-                  <span>🎉</span>
+                  <span className="empty-icon"><CheckIcon size={24} /></span>
                   <p>All caught up! No pending tasks in your focus queue.</p>
                   <button
                     type="button"
@@ -737,8 +745,8 @@ export default function HomeDashboard({
                           <span
                             className="home-subject-badge"
                             style={{
-                              borderColor: task.subject.color || "#aa3bff",
-                              color: task.subject.color || "#aa3bff",
+                              borderColor: task.subject.color || "#0F172A",
+                              color: task.subject.color || "#0F172A",
                             }}
                           >
                             {task.subject.name}
@@ -749,7 +757,7 @@ export default function HomeDashboard({
 
                         {task.deadline && (
                           <span className="home-deadline-tag">
-                            📅 Due:{" "}
+                            <CalendarIcon size={12} /> Due:{" "}
                             {new Date(task.deadline).toLocaleDateString(undefined, {
                               month: "short",
                               day: "numeric",
@@ -757,7 +765,7 @@ export default function HomeDashboard({
                           </span>
                         )}
                         <span className="home-est-time">
-                          ⏳ ~{task.estimatedDuration || 30}m
+                          <ClockIcon size={12} /> ~{task.estimatedDuration || 30}m
                         </span>
                       </div>
                     </div>
@@ -772,7 +780,7 @@ export default function HomeDashboard({
             <div className="home-card-header">
               <div className="home-card-title-group">
                 <span className="section-kicker">Knowledge Base</span>
-                <h3 className="home-card-title">📚 Academic Workspace & Subjects</h3>
+                <h3 className="home-card-title">Academic Workspace & Subjects</h3>
               </div>
               <button
                 type="button"
@@ -786,7 +794,7 @@ export default function HomeDashboard({
             <div className="home-subjects-grid">
               {subjects.length === 0 ? (
                 <div className="empty-home-state">
-                  <span>📖</span>
+                  <span className="empty-icon"><BookOpenIcon size={24} /></span>
                   <p>No subjects added yet. Create subjects to organize your study notes!</p>
                   <button
                     type="button"
@@ -801,7 +809,7 @@ export default function HomeDashboard({
                   <div
                     key={sub._id}
                     className="home-subject-card"
-                    style={{ borderLeftColor: sub.color || "#aa3bff" }}
+                    style={{ borderLeftColor: sub.color || "#0F172A" }}
                     onClick={() => onNavigateTab("workspace")}
                     title={`Open ${sub.name} in Workspace`}
                   >
@@ -816,7 +824,7 @@ export default function HomeDashboard({
                     </p>
                     <div className="home-subject-footer">
                       <span className="home-subject-tag-pill">
-                        📁 {sub.resourcesCount || 0} materials
+                        <PinIcon size={12} /> {sub.resourcesCount || 0} materials
                       </span>
                       <span className="home-subject-action">View &rarr;</span>
                     </div>
@@ -834,7 +842,7 @@ export default function HomeDashboard({
             <div className="home-card-header">
               <div className="home-card-title-group">
                 <span className="section-kicker">Deep Focus Station</span>
-                <h3 className="home-card-title">⚡ Quick Study Launchpad</h3>
+                <h3 className="home-card-title">Quick Study Launchpad</h3>
               </div>
               <button
                 type="button"
@@ -852,21 +860,21 @@ export default function HomeDashboard({
                 className={`home-preset-chip ${timerMinutes === 25 ? "active" : ""}`}
                 onClick={() => handleSetPreset(25)}
               >
-                🍅 25m Pomodoro
+                25m Pomodoro
               </button>
               <button
                 type="button"
                 className={`home-preset-chip ${timerMinutes === 50 ? "active" : ""}`}
                 onClick={() => handleSetPreset(50)}
               >
-                🧠 50m Deep Work
+                50m Deep Work
               </button>
               <button
                 type="button"
                 className={`home-preset-chip ${timerMinutes === 15 ? "active" : ""}`}
                 onClick={() => handleSetPreset(15)}
               >
-                ⚡ 15m Sprint
+                15m Sprint
               </button>
             </div>
 
@@ -893,8 +901,8 @@ export default function HomeDashboard({
               <div className="home-clock-status">
                 {isTimerActive
                   ? isTimerPaused
-                    ? "⏸️ Paused"
-                    : "🔥 Deep Work in Progress..."
+                    ? "Paused"
+                    : "Deep Work in Progress..."
                   : "Ready for your next focus session"}
               </div>
             </div>
@@ -907,7 +915,7 @@ export default function HomeDashboard({
                   className="btn btn-primary btn-full"
                   onClick={handleStartTimer}
                 >
-                  ▶️ Start {timerMinutes}m Focus
+                  <PlayIcon size={16} /> Start {timerMinutes}m Focus
                 </button>
               ) : isTimerPaused ? (
                 <div className="home-timer-btn-row">
@@ -916,7 +924,7 @@ export default function HomeDashboard({
                     className="btn btn-primary"
                     onClick={handleResumeTimer}
                   >
-                    ▶️ Resume
+                    <PlayIcon size={16} /> Resume
                   </button>
                   <button
                     type="button"
@@ -924,14 +932,14 @@ export default function HomeDashboard({
                     onClick={handleManualFinish}
                     disabled={savingSession}
                   >
-                    {savingSession ? "Saving..." : "🏁 Finish & Log"}
+                    <CheckIcon size={16} /> {savingSession ? "Saving..." : "Finish & Log"}
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleResetTimer}
                   >
-                    🔄 Reset
+                    <RotateCcwIcon size={16} /> Reset
                   </button>
                 </div>
               ) : (
@@ -941,7 +949,7 @@ export default function HomeDashboard({
                     className="btn btn-secondary"
                     onClick={handlePauseTimer}
                   >
-                    ⏸️ Pause
+                    <PauseIcon size={16} /> Pause
                   </button>
                   <button
                     type="button"
@@ -949,14 +957,14 @@ export default function HomeDashboard({
                     onClick={handleManualFinish}
                     disabled={savingSession}
                   >
-                    {savingSession ? "Saving..." : "🏁 Finish & Log"}
+                    <CheckIcon size={16} /> {savingSession ? "Saving..." : "Finish & Log"}
                   </button>
                   <button
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleResetTimer}
                   >
-                    🔄 Reset
+                    <RotateCcwIcon size={16} /> Reset
                   </button>
                 </div>
               )}
@@ -968,7 +976,7 @@ export default function HomeDashboard({
             <div className="home-card-header">
               <div className="home-card-title-group">
                 <span className="section-kicker">Multi-Format Assets</span>
-                <h3 className="home-card-title">📂 Recent Study Materials</h3>
+                <h3 className="home-card-title">Recent Study Materials</h3>
               </div>
               <button
                 type="button"
@@ -982,7 +990,7 @@ export default function HomeDashboard({
             <div className="home-resources-list">
               {recentResources.length === 0 ? (
                 <div className="empty-home-state">
-                  <span>📑</span>
+                  <span className="empty-icon"><FileTextIcon size={24} /></span>
                   <p>No study materials uploaded yet. Upload PDFs, docs, or web links!</p>
                   <button
                     type="button"
@@ -994,17 +1002,9 @@ export default function HomeDashboard({
                 </div>
               ) : (
                 recentResources.map((res) => {
-                  const getIcon = (type) => {
-                    switch (type) {
-                      case "pdf": return "📕";
-                      case "image": return "🖼️";
-                      case "doc": return "📄";
-                      default: return "🔗";
-                    }
-                  };
                   return (
                     <div key={res._id} className="home-resource-item">
-                      <span className="resource-item-icon">{getIcon(res.type)}</span>
+                      <span className="resource-item-icon"><FileTextIcon size={18} /></span>
                       <div className="resource-item-info">
                         <strong className="resource-item-title">{res.title}</strong>
                         <span className="resource-item-sub">

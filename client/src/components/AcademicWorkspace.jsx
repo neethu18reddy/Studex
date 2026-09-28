@@ -1,4 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  PlusIcon,
+  FileTextIcon,
+  PinIcon,
+  XIcon,
+  ExternalLinkIcon,
+  TrashIcon,
+  SearchIcon,
+} from "./Icons";
 
 export default function AcademicWorkspace({ token, apiBase, onError, onFeedback }) {
   const [subjects, setSubjects] = useState([]);
@@ -298,7 +307,7 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
           className="btn btn-primary"
           onClick={() => setShowSubjectModal(true)}
         >
-          + Add Subject
+          <PlusIcon size={14} /> Add Subject
         </button>
       </div>
 
@@ -319,17 +328,16 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                   key={sub._id}
                   className={`subject-pill-item ${isActive ? "active" : ""}`}
                   style={{
-                    borderColor: isActive ? sub.color || "var(--accent)" : "transparent",
+                    borderColor: isActive ? sub.color || "var(--primary)" : "transparent",
                   }}
                   onClick={() => setActiveSubject(sub)}
                 >
                   <span
                     className="subject-color-dot"
-                    style={{ backgroundColor: sub.color || "#aa3bff" }}
+                    style={{ backgroundColor: sub.color || "#0F172A" }}
                   ></span>
                   <div className="subject-pill-text">
                     <span className="subject-pill-name">{sub.name}</span>
-                    {sub.code && <span className="subject-pill-code">{sub.code}</span>}
                   </div>
                   <span className="subject-resource-count">
                     {sub.resourceCount || 0}
@@ -349,10 +357,10 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
               <div className="subject-title-row">
                 <span
                   className="subject-dot-large"
-                  style={{ backgroundColor: activeSubject.color || "#aa3bff" }}
+                  style={{ backgroundColor: activeSubject.color || "#0F172A" }}
                 ></span>
                 <h3>{activeSubject.name}</h3>
-                {activeSubject.code && (
+                {activeSubject.code && activeSubject.code.toLowerCase() !== activeSubject.name.toLowerCase() && (
                   <span className="subject-badge-code">{activeSubject.code}</span>
                 )}
                 <span className="subject-badge-semester">{activeSubject.semester}</span>
@@ -370,31 +378,31 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                   setShowResourceModal(true);
                 }}
               >
-                + Add Resource
+                <PlusIcon size={14} /> Add Resource
               </button>
               <button
                 className="btn btn-secondary btn-sm btn-danger-outline"
                 onClick={() => handleDeleteSubject(activeSubject._id, activeSubject.name)}
                 title="Delete this subject and its resources"
               >
-                🗑️ Delete Subject
+                <TrashIcon size={14} /> Delete Subject
               </button>
             </div>
           </div>
 
           {/* Resource Filter Bar */}
-          <div className="resource-filter-toolbar">
-            <div className="resource-filter-tabs">
+          <div className="workspace-controls-bar">
+            <div className="workspace-view-tabs">
               {[
                 { id: "all", label: "All Formats" },
-                { id: "pdf", label: "📄 PDFs" },
-                { id: "image", label: "🖼️ Images" },
-                { id: "document", label: "📝 Documents" },
-                { id: "link", label: "🔗 Links" },
+                { id: "pdf", label: "PDFs" },
+                { id: "image", label: "Images" },
+                { id: "document", label: "Documents" },
+                { id: "link", label: "Links" },
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  className={`tab-btn ${resourceFilter === tab.id ? "active" : ""}`}
+                  className={`workspace-tab-btn ${resourceFilter === tab.id ? "active" : ""}`}
                   onClick={() => setResourceFilter(tab.id)}
                 >
                   {tab.label}
@@ -402,9 +410,11 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
               ))}
             </div>
 
-            <div className="resource-search-box">
+            <div className="workspace-search-wrap">
+              <SearchIcon size={15} className="workspace-search-icon" />
               <input
                 type="text"
+                className="workspace-search-input"
                 placeholder="Search resources..."
                 value={resourceSearch}
                 onChange={(e) => setResourceSearch(e.target.value)}
@@ -415,32 +425,31 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
           {/* Resources Grid */}
           <div className="resources-grid-container">
             {loadingResources ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading {activeSubject.name} resources...</p>
-              </div>
+              <div className="loading-box">Loading {activeSubject.name} resources...</div>
             ) : resources.length === 0 ? (
-              <div className="empty-resources-state">
-                <span className="empty-icon">📂</span>
-                <h4>No resources in this subject</h4>
+              <div className="empty-state-box">
+                <div className="empty-icon-circle">
+                  <FileTextIcon size={28} />
+                </div>
+                <h3>No resources found</h3>
                 <p>
-                  Upload PDFs, lecture slides, cheatsheet diagrams, or save helpful web links.
+                  Upload PDFs, lecture slides, cheatsheets, or save helpful web links for this subject.
                 </p>
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => setShowResourceModal(true)}
                 >
-                  + Upload First Resource
+                  <PlusIcon size={14} /> Add Resource
                 </button>
               </div>
             ) : (
               <div className="resources-grid">
                 {resources.map((res) => (
-                  <div key={res._id} className="resource-item-card card">
-                    <div className="resource-card-top">
+                  <div key={res._id} className="resource-card">
+                    <div className="resource-card-header">
                       <div className="resource-type-tag-wrap">
-                        <span className={`resource-type-tag ${res.type}`}>
-                          {getResourceIcon(res.type)} {res.type.toUpperCase()}
+                        <span className={`resource-type-badge ${res.type}`}>
+                          {res.type.toUpperCase()}
                         </span>
                         {res.fileSize > 0 && (
                           <span className="resource-filesize">
@@ -449,17 +458,18 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                         )}
                       </div>
                       <button
-                        className="btn-delete"
+                        className="event-delete-btn"
                         title="Delete Resource"
                         onClick={() => handleDeleteResource(res._id, res.title)}
+                        aria-label="Delete Resource"
                       >
-                        🗑️
+                        <TrashIcon size={14} />
                       </button>
                     </div>
 
-                    <h4 className="resource-title">{res.title}</h4>
+                    <h4 className="resource-card-title">{res.title}</h4>
                     {res.description && (
-                      <p className="resource-desc">{res.description}</p>
+                      <p className="resource-card-desc">{res.description}</p>
                     )}
 
                     {Array.isArray(res.tags) && res.tags.length > 0 && (
@@ -479,7 +489,7 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                         rel="noopener noreferrer"
                         className="btn btn-secondary btn-sm resource-open-btn"
                       >
-                        {res.type === "link" ? "🌐 Visit Link" : "⬇️ View / Download"}
+                        <ExternalLinkIcon size={13} /> {res.type === "link" ? "Visit Link" : "View / Download"}
                       </a>
                     </div>
                   </div>
@@ -499,12 +509,13 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
               <button
                 className="modal-close-btn"
                 onClick={() => setShowSubjectModal(false)}
+                title="Close"
               >
-                &times;
+                <XIcon size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubject} className="auth-form">
+            <form onSubmit={handleCreateSubject}>
               <div className="form-group">
                 <label htmlFor="sub-name">Subject Name *</label>
                 <input
@@ -558,13 +569,13 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                 <label htmlFor="sub-color">Theme Color</label>
                 <div className="color-picker-row">
                   {[
-                    "#aa3bff",
                     "#3b82f6",
                     "#10b981",
                     "#f59e0b",
                     "#ec4899",
-                    "#6366f1",
-                    "#14b8a6",
+                    "#8b5cf6",
+                    "#06b6d4",
+                    "#0f172a",
                   ].map((col) => (
                     <button
                       key={col}
@@ -592,20 +603,20 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                 />
               </div>
 
-              <div className="form-buttons">
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={submittingSubject}
-                >
-                  {submittingSubject ? "Creating..." : "Save Subject"}
-                </button>
+              <div className="modal-actions">
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowSubjectModal(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submittingSubject}
+                >
+                  {submittingSubject ? "Creating..." : "Save Subject"}
                 </button>
               </div>
             </form>
@@ -622,8 +633,9 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
               <button
                 className="modal-close-btn"
                 onClick={() => setShowResourceModal(false)}
+                title="Close"
               >
-                &times;
+                <XIcon size={16} />
               </button>
             </div>
 
@@ -633,18 +645,18 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                 className={`auth-tab ${resourceModalMode === "file" ? "active" : ""}`}
                 onClick={() => setResourceModalMode("file")}
               >
-                📁 Upload File (PDF / Image / Doc)
+                <FileTextIcon size={14} /> Upload File (PDF / Image / Doc)
               </button>
               <button
                 type="button"
                 className={`auth-tab ${resourceModalMode === "link" ? "active" : ""}`}
                 onClick={() => setResourceModalMode("link")}
               >
-                🔗 External Link
+                <ExternalLinkIcon size={14} /> External Link
               </button>
             </div>
 
-            <form onSubmit={handleCreateResource} className="auth-form">
+            <form onSubmit={handleCreateResource}>
               <div className="form-group">
                 <label htmlFor="res-title">Resource Title *</label>
                 <input
@@ -725,7 +737,14 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                 />
               </div>
 
-              <div className="form-buttons">
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowResourceModal(false)}
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   className="btn btn-primary"
@@ -733,16 +752,9 @@ export default function AcademicWorkspace({ token, apiBase, onError, onFeedback 
                 >
                   {submittingResource
                     ? resourceModalMode === "file"
-                      ? "Uploading to Cloudinary..."
+                      ? "Uploading..."
                       : "Saving Link..."
                     : "Save Resource"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowResourceModal(false)}
-                >
-                  Cancel
                 </button>
               </div>
             </form>

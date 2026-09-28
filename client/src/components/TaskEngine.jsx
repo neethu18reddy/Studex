@@ -1,6 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  TasksIcon,
+  PlusIcon,
+  ClockIcon,
+  CheckIcon,
+  CalendarIcon,
+  SunIcon,
+  SearchIcon,
+  TrashIcon,
+  XIcon,
+  BookOpenIcon,
+} from "./Icons";
 
-export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
+export default function TaskEngine({
+  token,
+  apiBase,
+  onError,
+  onFeedback,
+  triggerAdd = 0,
+}) {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,6 +29,13 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
 
   // Create Task Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    if (triggerAdd > 0) {
+      setShowAddModal(true);
+    }
+  }, [triggerAdd]);
+
   const [savingTask, setSavingTask] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -139,7 +164,7 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
         prev.map((t) => (t._id === task._id ? { ...t, status: nextStatus } : t))
       );
       onFeedback?.(
-        nextStatus === "completed" ? "Task marked as completed! 🎉" : "Task marked as to-do"
+        nextStatus === "completed" ? "Task marked as completed!" : "Task marked as to-do"
       );
     } catch (err) {
       onError?.(err.message || "Could not update task");
@@ -174,7 +199,7 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
     if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = task.title.toLowerCase().includes(q);
+      const matchTitle = task.title?.toLowerCase().includes(q);
       const matchDesc = task.description && task.description.toLowerCase().includes(q);
       const matchSubject = task.subject?.name?.toLowerCase().includes(q);
       if (!matchTitle && !matchDesc && !matchSubject) return false;
@@ -188,37 +213,43 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
   return (
     <div className="task-engine-container">
       {/* Header & Controls */}
-      <div className="section-header-row">
+      <div className="workspace-header">
         <div>
-          <h2 className="section-title">📋 Student Task Engine</h2>
-          <p className="section-subtitle">
+          <h2>Task Engine</h2>
+          <p className="section-desc">
             Plan your daily study goals, track deadlines, and conquer your assignments.
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          ➕ Add New Task
+          <PlusIcon size={16} /> Add Task
         </button>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="task-summary-grid">
         <div className="kpi-card">
-          <span className="kpi-icon">🎯</span>
-          <div>
+          <div className="kpi-icon-wrap">
+            <TasksIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{tasks.length}</div>
             <div className="kpi-label">Total Tasks</div>
           </div>
         </div>
         <div className="kpi-card">
-          <span className="kpi-icon">⏳</span>
-          <div>
+          <div className="kpi-icon-wrap pending">
+            <ClockIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{pendingCount}</div>
-            <div className="kpi-label">Pending / To-Do</div>
+            <div className="kpi-label">Pending / In Progress</div>
           </div>
         </div>
         <div className="kpi-card">
-          <span className="kpi-icon">✅</span>
-          <div>
+          <div className="kpi-icon-wrap completed">
+            <CheckIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{completedCount}</div>
             <div className="kpi-label">Completed</div>
           </div>
@@ -238,24 +269,27 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
             className={`task-tab-btn ${viewTab === "today" ? "active" : ""}`}
             onClick={() => setViewTab("today")}
           >
-            ☀️ Today's Focus
+            <SunIcon size={14} /> Today's Focus
           </button>
           <button
             className={`task-tab-btn ${viewTab === "upcoming" ? "active" : ""}`}
             onClick={() => setViewTab("upcoming")}
           >
-            📅 Upcoming Deadlines
+            <CalendarIcon size={14} /> Upcoming Deadlines
           </button>
         </div>
 
         <div className="task-filters-row">
-          <input
-            type="text"
-            className="task-search-input"
-            placeholder="🔍 Search tasks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="task-search-wrap">
+            <SearchIcon size={15} className="task-search-icon" />
+            <input
+              type="text"
+              className="task-search-input"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
           <select
             className="task-filter-select"
@@ -274,10 +308,10 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
             <option value="all">All Priorities</option>
-            <option value="urgent">🔴 Urgent</option>
-            <option value="high">🟠 High</option>
-            <option value="medium">🟡 Medium</option>
-            <option value="low">🟢 Low</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
           </select>
         </div>
       </div>
@@ -287,7 +321,9 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
         <div className="loading-box">Loading tasks...</div>
       ) : filteredTasks.length === 0 ? (
         <div className="empty-state-box">
-          <span className="empty-icon">📝</span>
+          <div className="empty-icon-circle">
+            <TasksIcon size={32} />
+          </div>
           <h3>No tasks found</h3>
           <p>
             {viewTab === "today"
@@ -297,7 +333,7 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
               : "Create your first task to start organizing your assignments and study goals."}
           </p>
           <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-            ➕ Create Task
+            <PlusIcon size={15} /> Add Task
           </button>
         </div>
       ) : (
@@ -316,17 +352,17 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                 }`}
               >
                 <div className="task-header-row">
-                  <label className="task-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      onChange={() => handleToggleStatus(task)}
-                    />
+                  <div className="task-title-group" onClick={() => handleToggleStatus(task)}>
+                    <div
+                      className={`task-checkbox-circle ${isCompleted ? "checked" : ""}`}
+                    >
+                      {isCompleted && <CheckIcon size={12} />}
+                    </div>
                     <span className="task-title-text">{task.title}</span>
-                  </label>
+                  </div>
 
-                  <span className={`priority-badge priority-${task.priority}`}>
-                    {task.priority.toUpperCase()}
+                  <span className={`task-priority-badge priority-${task.priority}`}>
+                    {task.priority}
                   </span>
                 </div>
 
@@ -340,17 +376,21 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                       <span
                         className="task-subject-tag"
                         style={{
-                          borderColor: task.subject.color || "#aa3bff",
-                          color: task.subject.color || "#aa3bff",
+                          borderColor: task.subject.color || "currentColor",
+                          color: task.subject.color || "inherit",
                         }}
                       >
-                        📚 {task.subject.name}
+                        <span
+                          className="task-subject-dot"
+                          style={{ background: task.subject.color || "#3B82F6" }}
+                        />
+                        {task.subject.name}
                       </span>
                     )}
 
                     {task.estimatedDuration && (
                       <span className="task-duration-tag">
-                        ⏱️ {task.estimatedDuration} mins
+                        <ClockIcon size={12} /> {task.estimatedDuration} mins
                       </span>
                     )}
 
@@ -360,7 +400,8 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                           isOverdue ? "text-danger" : ""
                         }`}
                       >
-                        📅 {deadlineDate.toLocaleDateString(undefined, {
+                        <CalendarIcon size={12} />
+                        {deadlineDate.toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",
@@ -372,11 +413,11 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                   </div>
 
                   <button
-                    className="task-delete-btn"
+                    className="event-delete-btn"
                     title="Delete task"
                     onClick={() => handleDeleteTask(task._id)}
                   >
-                    🗑️
+                    <TrashIcon size={14} />
                   </button>
                 </div>
               </div>
@@ -390,16 +431,17 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
         <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create Student Task</h3>
+              <h3>Create Task</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowAddModal(false)}
+                title="Close"
               >
-                &times;
+                <XIcon size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="auth-form">
+            <form onSubmit={handleCreateTask}>
               <div className="form-group">
                 <label>Task Title *</label>
                 <input
@@ -437,7 +479,7 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                     <option value="">General (No subject)</option>
                     {subjects.map((sub) => (
                       <option key={sub._id} value={sub._id}>
-                        {sub.name} {sub.code ? `(${sub.code})` : ""}
+                        {sub.name}
                       </option>
                     ))}
                   </select>
@@ -451,10 +493,10 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
                       setNewTask({ ...newTask, priority: e.target.value })
                     }
                   >
-                    <option value="low">🟢 Low</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="high">🟠 High</option>
-                    <option value="urgent">🔴 Urgent</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
                   </select>
                 </div>
               </div>
@@ -490,11 +532,18 @@ export default function TaskEngine({ token, apiBase, onError, onFeedback }) {
 
               <div className="modal-actions">
                 <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
                   type="submit"
-                  className="btn btn-primary btn-full"
+                  className="btn btn-primary"
                   disabled={savingTask}
                 >
-                  {savingTask ? "Saving Task..." : "Create Task"}
+                  {savingTask ? "Saving..." : "Create Task"}
                 </button>
               </div>
             </form>

@@ -1,84 +1,110 @@
 import React from "react";
+import {
+  HomeIcon,
+  PinIcon,
+  PlusIcon,
+  ClockIcon,
+  StarIcon,
+  CalendarIcon,
+  BellIcon,
+  UserIcon,
+  SunIcon,
+  MoonIcon,
+  LogoutIcon,
+  MenuIcon,
+  ChevronLeftIcon,
+} from "./Icons";
 
 export default function Sidebar({
-  isExpanded,
+  isExpanded = false,
   onToggle,
   activeTab,
   onSelectTab,
   currentUser,
   onOpenProfile,
   onLogout,
-  serverHealth,
   theme = "dark",
   onToggleTheme,
+  onOpenAddResource,
+  onOpenAddTask,
+  onOpenAddFocusSession,
+  onOpenStarredTasks,
+  onOpenCalendar,
+  onOpenUpcomingEvents,
 }) {
-  const defaultGenderAvatars = {
-    male: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png",
-    female: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png",
-    other: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-1.png",
-    prefer_not_to_say: "https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-2.png",
-  };
-
-  const avatarUrl =
-    currentUser?.profilePicture?.url ||
-    defaultGenderAvatars[currentUser?.gender] ||
-    defaultGenderAvatars.other;
-
-  const navItems = [
+  const topNavItems = [
     {
       id: "home",
-      icon: "🏠",
+      icon: <HomeIcon size={20} />,
       label: "Home Dashboard",
-      subtext: "Command Center & Feed",
-      badge: "Home",
+      tooltip: "Home Dashboard",
+      onClick: () => onSelectTab("home"),
+      isActive: activeTab === "home",
     },
     {
-      id: "workspace",
-      icon: "📚",
-      label: "Academic Workspace",
-      subtext: "Subjects & Notes",
-      badge: "Core",
+      id: "add-resource",
+      icon: <PinIcon size={20} />,
+      label: "Add Resource",
+      tooltip: "Add Resource",
+      onClick: onOpenAddResource,
+      isActive: false,
     },
     {
-      id: "tasks",
-      icon: "📋",
-      label: "Student Task Engine",
-      subtext: "Today's Focus & Deadlines",
-      badge: "Tasks",
+      id: "add-task",
+      icon: <PlusIcon size={20} />,
+      label: "Add Task",
+      tooltip: "Add Task",
+      onClick: onOpenAddTask,
+      isActive: false,
     },
     {
-      id: "study",
-      icon: "⏱️",
-      label: "Focus Study Engine",
-      subtext: "Timer & Focus",
-      badge: "Focus",
+      id: "add-focus",
+      icon: <ClockIcon size={20} />,
+      label: "Add Focus Session",
+      tooltip: "Add Focus Session",
+      onClick: onOpenAddFocusSession,
+      isActive: false,
     },
     {
-      id: "analytics",
-      icon: "📈",
-      label: "Analytics & Progress",
-      subtext: "Progress & Metrics",
-      badge: "Analytics",
+      id: "starred-tasks",
+      icon: <StarIcon size={20} />,
+      label: "Important Tasks",
+      tooltip: "Important Tasks",
+      onClick: onOpenStarredTasks,
+      isActive: false,
     },
     {
-      id: "gamification",
-      icon: "🏆",
-      label: "Gamification & Streaks",
-      subtext: "Streaks & Rewards",
-      badge: "Streaks",
+      id: "calendar",
+      icon: <CalendarIcon size={20} />,
+      label: "Academic Calendar",
+      tooltip: "Academic Calendar",
+      onClick: onOpenCalendar,
+      isActive: false,
+    },
+    {
+      id: "upcoming-events",
+      icon: <BellIcon size={20} />,
+      label: "Upcoming Events",
+      tooltip: "Upcoming Events",
+      onClick: onOpenUpcomingEvents,
+      isActive: false,
     },
   ];
 
   return (
     <aside className={`studex-sidebar ${isExpanded ? "expanded" : "collapsed"}`}>
-      {/* Sidebar Header with Logo & Toggle Button */}
+      {/* Top Header: Studex Brand Symbol & Expansion Toggle */}
       <div className="sidebar-header">
-        <div className="sidebar-brand" onClick={() => onSelectTab("home")}>
+        <div
+          className="sidebar-brand"
+          onClick={() => onSelectTab("home")}
+          title="Studex Home"
+        >
           <div className="sidebar-brand-logo">SX</div>
           {isExpanded && (
             <div className="sidebar-brand-text">
-              <h1 className="sidebar-title">Studex</h1>
-              <span className="sidebar-subtitle">Student Workspace</span>
+              <h2 className="sidebar-title">Studex</h2>
+              <span className="sidebar-subtitle">Academic Hub</span>
             </div>
           )}
         </div>
@@ -87,138 +113,83 @@ export default function Sidebar({
           type="button"
           className="sidebar-toggle-btn"
           onClick={onToggle}
-          title={isExpanded ? "Collapse Sidebar (Show icons only)" : "Expand Sidebar (Show feature names)"}
+          title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar (Show Text)"}
+          aria-label="Toggle Sidebar"
         >
-          {isExpanded ? "◀" : "☰"}
+          {isExpanded ? <ChevronLeftIcon size={16} /> : <MenuIcon size={16} />}
         </button>
       </div>
 
-      {/* Navigation Feature Items */}
-      <nav className="sidebar-nav">
-        <div className="sidebar-nav-section-label">
-          {isExpanded ? "MAIN FEATURES" : "•••"}
-        </div>
+      {/* Top Section: Navigation & Action Icons with Text */}
+      <div className="sidebar-top-section">
+        {topNavItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`sidebar-nav-btn ${item.isActive ? "active" : ""}`}
+            onClick={item.onClick}
+            data-tooltip={!isExpanded ? item.tooltip : undefined}
+            aria-label={item.label}
+          >
+            <span className="sidebar-btn-icon">{item.icon}</span>
+            {isExpanded && (
+              <>
+                <span className="sidebar-btn-label">{item.label}</span>
+                {item.isActive && <span className="sidebar-active-dot" />}
+              </>
+            )}
+          </button>
+        ))}
+      </div>
 
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`sidebar-nav-item ${isActive ? "active" : ""}`}
-              onClick={() => onSelectTab(item.id)}
-              title={!isExpanded ? item.label : ""}
-            >
-              <span className="sidebar-nav-icon">{item.icon}</span>
-
-              {isExpanded && (
-                <div className="sidebar-nav-content">
-                  <div className="sidebar-nav-title-row">
-                    <span className="sidebar-nav-label">{item.label}</span>
-                  </div>
-                  <span className="sidebar-nav-subtext">{item.subtext}</span>
-                </div>
-              )}
-
-              {isExpanded && isActive && <span className="sidebar-active-indicator" />}
-            </button>
-          );
-        })}
-
-        {/* Quick Profile Tab Button in Nav List */}
+      {/* Bottom Section: Profile, Theme Toggle & Logout */}
+      <div className="sidebar-bottom-section">
+        {/* Profile Button */}
         <button
           type="button"
-          className="sidebar-nav-item"
+          className="sidebar-nav-btn profile-btn"
           onClick={onOpenProfile}
-          title={!isExpanded ? "Edit Student Profile" : ""}
+          data-tooltip={!isExpanded ? (currentUser ? `${currentUser.name} (Profile)` : "Student Profile") : undefined}
+          aria-label="Student Profile"
         >
-          <span className="sidebar-nav-icon">👤</span>
+          <span className="sidebar-btn-icon"><UserIcon size={20} /></span>
           {isExpanded && (
-            <div className="sidebar-nav-content">
-              <span className="sidebar-nav-label">Student Profile</span>
-              <span className="sidebar-nav-subtext">View & Edit Details</span>
+            <div className="sidebar-user-details-col">
+              <span className="sidebar-btn-label">{currentUser?.name || "Student Profile"}</span>
+              <span className="sidebar-btn-sublabel">{currentUser?.year || "Student"}</span>
             </div>
           )}
         </button>
-      </nav>
 
-      {/* Sidebar Footer with User Details, Theme Toggle & Status */}
-      <div className="sidebar-footer">
-        {/* User Profile Card */}
-        {currentUser && (
-          <div
-            className="sidebar-user-card"
-            onClick={onOpenProfile}
-            title={!isExpanded ? `${currentUser.name} (Click to edit profile)` : ""}
-          >
-            <img
-              src={avatarUrl}
-              alt={currentUser.name}
-              className="sidebar-user-avatar"
-            />
-            {isExpanded && (
-              <div className="sidebar-user-info">
-                <strong className="sidebar-user-name">{currentUser.name}</strong>
-                <span className="sidebar-user-role">
-                  {currentUser.year || "Student"} • {currentUser.course || "Studex"}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          className="sidebar-nav-btn theme-toggle-btn"
+          onClick={onToggleTheme}
+          data-tooltip={!isExpanded ? `Switch to ${theme === "dark" ? "Light" : "Dark"} Mode` : undefined}
+          aria-label="Toggle Color Theme"
+        >
+          <span className="sidebar-btn-icon">
+            {theme === "dark" ? <SunIcon size={20} /> : <MoonIcon size={20} />}
+          </span>
+          {isExpanded && (
+            <span className="sidebar-btn-label">
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </span>
+          )}
+        </button>
 
-        {/* Status Indicators, Theme Toggle & Logout when expanded */}
-        {isExpanded && (
-          <div className="sidebar-footer-controls">
-            {/* Theme Toggle Button */}
-            <button
-              type="button"
-              className="sidebar-theme-toggle-btn"
-              onClick={onToggleTheme}
-              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
-            >
-              <span>{theme === "dark" ? "☀️" : "🌙"}</span>
-              <span>{theme === "dark" ? "Light Theme" : "Dark Theme"}</span>
-            </button>
-
-            {serverHealth && (
-              <div className="sidebar-status-pill">
-                <span className={`status-dot ${serverHealth.status}`} />
-                <span>Server {serverHealth.status === "online" ? "Online" : "Offline"}</span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              className="sidebar-logout-btn"
-              onClick={onLogout}
-              title="Logout from Studex"
-            >
-              🚪 Logout
-            </button>
-          </div>
-        )}
-
-        {!isExpanded && (
-          <div className="sidebar-collapsed-actions">
-            <button
-              type="button"
-              className="sidebar-mini-theme-btn"
-              onClick={onToggleTheme}
-              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
-            <button
-              type="button"
-              className="sidebar-mini-logout-btn"
-              onClick={onLogout}
-              title="Logout"
-            >
-              🚪
-            </button>
-          </div>
-        )}
+        {/* Logout Button */}
+        <button
+          type="button"
+          className="sidebar-nav-btn logout-btn"
+          onClick={onLogout}
+          data-tooltip={!isExpanded ? "Sign Out / Logout" : undefined}
+          aria-label="Logout"
+        >
+          <span className="sidebar-btn-icon"><LogoutIcon size={20} /></span>
+          {isExpanded && <span className="sidebar-btn-label">Logout</span>}
+        </button>
       </div>
     </aside>
   );

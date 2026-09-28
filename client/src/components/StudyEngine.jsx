@@ -1,12 +1,37 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  ClockIcon,
+  CalendarIcon,
+  TrophyIcon,
+  TasksIcon,
+  PlayIcon,
+  PauseIcon,
+  RotateCcwIcon,
+  TrashIcon,
+  CheckIcon,
+  BookOpenIcon,
+  FileTextIcon,
+} from "./Icons";
 
-export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
+export default function StudyEngine({
+  token,
+  apiBase,
+  onError,
+  onFeedback,
+  triggerCustom = 0,
+}) {
   // Timer State
   const [timerMinutes, setTimerMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+
+  useEffect(() => {
+    if (triggerCustom > 0) {
+      setShowCustomInput(true);
+    }
+  }, [triggerCustom]);
   const [customMinutesInput, setCustomMinutesInput] = useState(45);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedTasks, setSelectedTasks] = useState([]);
@@ -253,35 +278,43 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
         </div>
       </div>
 
-      {/* Analytics KPI Row */}
+      {/* Analytics KPI Row: 4 side-by-side cards */}
       <div className="study-kpi-grid">
-        <div className="kpi-card focus-kpi">
-          <span className="kpi-icon">⚡</span>
-          <div>
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap">
+            <ClockIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{stats ? `${stats.todayFocusMinutes}m` : "0m"}</div>
             <div className="kpi-label">Today's Focus Time</div>
           </div>
         </div>
 
-        <div className="kpi-card focus-kpi">
-          <span className="kpi-icon">📅</span>
-          <div>
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap pending">
+            <CalendarIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{stats ? `${stats.weekFocusMinutes}m` : "0m"}</div>
             <div className="kpi-label">Past 7 Days Focus</div>
           </div>
         </div>
 
-        <div className="kpi-card focus-kpi">
-          <span className="kpi-icon">🏆</span>
-          <div>
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap purple">
+            <TrophyIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{stats ? `${stats.totalFocusHours} hrs` : "0 hrs"}</div>
             <div className="kpi-label">Total Focus ({stats?.totalSessions || 0} Sessions)</div>
           </div>
         </div>
 
-        <div className="kpi-card focus-kpi">
-          <span className="kpi-icon">🎯</span>
-          <div>
+        <div className="kpi-card">
+          <div className="kpi-icon-wrap completed">
+            <TasksIcon size={20} />
+          </div>
+          <div className="kpi-info">
             <div className="kpi-value">{stats?.totalTasksCompletedInFocus || 0}</div>
             <div className="kpi-label">Tasks Finished in Focus</div>
           </div>
@@ -292,42 +325,48 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
       <div className="study-main-grid">
         {/* Left: Focus Timer Widget */}
         <div className="card focus-timer-card">
-          <h3 className="timer-card-title">Deep Focus Session</h3>
+          <div className="focus-card-header">
+            <h3>Deep Focus Session</h3>
+          </div>
 
           {/* Preset Buttons */}
-          <div className="timer-presets-row">
+          <div className="study-presets-row">
             <button
-              className={`preset-btn ${timerMinutes === 25 && !showCustomInput ? "active" : ""}`}
+              type="button"
+              className={`preset-pill-btn ${timerMinutes === 25 && !showCustomInput ? "active" : ""}`}
               onClick={() => handleSetPreset(25)}
             >
-              🍅 25m Pomodoro
+              25m Pomodoro
             </button>
             <button
-              className={`preset-btn ${timerMinutes === 50 && !showCustomInput ? "active" : ""}`}
+              type="button"
+              className={`preset-pill-btn ${timerMinutes === 50 && !showCustomInput ? "active" : ""}`}
               onClick={() => handleSetPreset(50)}
             >
-              🧠 50m Deep Work
+              50m Deep Work
             </button>
             <button
-              className={`preset-btn ${timerMinutes === 60 && !showCustomInput ? "active" : ""}`}
+              type="button"
+              className={`preset-pill-btn ${timerMinutes === 60 && !showCustomInput ? "active" : ""}`}
               onClick={() => handleSetPreset(60)}
             >
-              ⚡ 60m Power Hour
+              60m Power Hour
             </button>
             <button
-              className={`preset-btn ${showCustomInput || ![25, 50, 60].includes(timerMinutes) ? "active" : ""}`}
+              type="button"
+              className={`preset-pill-btn ${showCustomInput || ![25, 50, 60].includes(timerMinutes) ? "active" : ""}`}
               onClick={() => setShowCustomInput(!showCustomInput)}
             >
-              ⚙️ Custom ({timerMinutes}m)
+              Custom ({timerMinutes}m)
             </button>
           </div>
 
           {/* Custom Duration Configurator */}
           {showCustomInput && (
-            <div className="custom-duration-panel animate-scale-in">
+            <div className="custom-duration-panel">
               <div className="custom-duration-header">
-                <span className="custom-duration-title">Custom Focus Duration:</span>
-                <span className="custom-duration-badge">{customMinutesInput} minutes</span>
+                <span className="custom-duration-title">Custom Duration</span>
+                <span className="custom-duration-badge">{customMinutesInput} mins</span>
               </div>
 
               {/* Quick Preset Chips */}
@@ -375,7 +414,7 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary btn-sm btn-apply-custom"
+                  className="btn btn-primary btn-sm"
                   onClick={() => handleApplyCustomDuration(customMinutesInput)}
                 >
                   Set {customMinutesInput}m
@@ -385,71 +424,65 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
           )}
 
           {/* Timer Visual Display */}
-          <div className="timer-clock-display">
-            <div className="timer-circle-wrap">
-              <div
-                className="timer-progress-fill"
-                style={{ width: `${totalProgress}%` }}
-              ></div>
-            </div>
-            <div className="timer-digits">{formatTime(secondsLeft)}</div>
-            <div className="timer-status-caption">
+          <div className="home-clock-wrapper study-clock-wrapper">
+            <div className="home-clock-digits">{formatTime(secondsLeft)}</div>
+            <div className="home-clock-status">
               {isActive
                 ? isPaused
-                  ? "⏸️ Paused"
-                  : "🔥 Focus in Progress..."
-                : "Ready to focus"}
+                  ? "Paused"
+                  : "Focus in Progress"
+                : "Ready to Focus"}
             </div>
           </div>
 
           {/* Action Controls */}
-          <div className="timer-actions-row">
+          <div className="study-timer-actions">
             {!isActive ? (
               <button
-                className="btn btn-primary btn-lg btn-start-timer"
+                className="btn btn-primary btn-lg btn-full"
                 onClick={handleStartTimer}
               >
-                ▶️ Start Focus Session
+                <PlayIcon size={18} /> Start Focus Session
               </button>
             ) : isPaused ? (
-              <>
+              <div className="timer-btn-row">
                 <button className="btn btn-primary" onClick={handleResumeTimer}>
-                  ▶️ Resume
+                  <PlayIcon size={16} /> Resume
                 </button>
                 <button
-                  className="btn btn-secondary btn-finish-session"
+                  className="btn btn-secondary"
                   onClick={handleManualFinish}
                   disabled={savingSession}
                 >
-                  {savingSession ? "Saving..." : "🏁 Finish & Log Session"}
+                  <CheckIcon size={16} /> {savingSession ? "Saving..." : "Finish & Log"}
                 </button>
                 <button className="btn btn-secondary" onClick={handleResetTimer}>
-                  🔄 Reset
+                  <RotateCcwIcon size={16} /> Reset
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="timer-btn-row">
                 <button className="btn btn-secondary" onClick={handlePauseTimer}>
-                  ⏸️ Pause
+                  <PauseIcon size={16} /> Pause
                 </button>
                 <button
-                  className="btn btn-primary btn-finish-session"
+                  className="btn btn-primary"
                   onClick={handleManualFinish}
                   disabled={savingSession}
                 >
-                  {savingSession ? "Saving..." : "🏁 Finish & Log Session"}
+                  <CheckIcon size={16} /> {savingSession ? "Saving..." : "Finish & Log"}
                 </button>
                 <button className="btn btn-secondary" onClick={handleResetTimer}>
-                  🔄 Reset
+                  <RotateCcwIcon size={16} /> Reset
                 </button>
-              </>
+              </div>
             )}
           </div>
 
           {/* Session Linking Controls */}
           <div className="timer-session-options">
             <div className="form-group">
-              <label>📚 Focus Subject</label>
+              <label>Focus Subject</label>
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
@@ -457,7 +490,7 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                 <option value="">General Study (No specific subject)</option>
                 {subjects.map((sub) => (
                   <option key={sub._id} value={sub._id}>
-                    {sub.name} {sub.code ? `(${sub.code})` : ""}
+                    {sub.name}
                   </option>
                 ))}
               </select>
@@ -465,32 +498,35 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
 
             {tasks.length > 0 && (
               <div className="form-group">
-                <label>🎯 Mark Tasks Completed in this Session</label>
+                <label>Mark Tasks Completed in this Session</label>
                 <div className="tasks-checkbox-list">
-                  {tasks.slice(0, 5).map((t) => (
-                    <label key={t._id} className="task-mini-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={selectedTasks.includes(t._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTasks([...selectedTasks, t._id]);
+                  {tasks.slice(0, 5).map((t) => {
+                    const isChecked = selectedTasks.includes(t._id);
+                    return (
+                      <div
+                        key={t._id}
+                        className={`task-mini-checkbox-item ${isChecked ? "active" : ""}`}
+                        onClick={() => {
+                          if (isChecked) {
+                            setSelectedTasks(selectedTasks.filter((id) => id !== t._id));
                           } else {
-                            setSelectedTasks(
-                              selectedTasks.filter((id) => id !== t._id)
-                            );
+                            setSelectedTasks([...selectedTasks, t._id]);
                           }
                         }}
-                      />
-                      <span>{t.title}</span>
-                    </label>
-                  ))}
+                      >
+                        <div className={`task-checkbox-circle ${isChecked ? "checked" : ""}`}>
+                          {isChecked && <CheckIcon size={11} />}
+                        </div>
+                        <span>{t.title}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             <div className="form-group">
-              <label>📝 Session Reflection / Notes</label>
+              <label>Session Reflection / Notes</label>
               <input
                 type="text"
                 placeholder="e.g. Solved 10 calculus integrals, reviewed lecture slides"
@@ -505,9 +541,9 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
         <div className="study-analytics-side">
           {/* Subject Distribution */}
           <div className="card subject-analytics-card">
-            <h3>📊 Focus Time by Subject</h3>
+            <h3>Focus Time by Subject</h3>
             {loadingStats ? (
-              <p>Loading analytics...</p>
+              <div className="loading-box">Loading analytics...</div>
             ) : !stats || stats.subjectBreakdown.length === 0 ? (
               <p className="empty-hint">
                 No study sessions recorded yet. Start the timer to see your subject distribution!
@@ -520,7 +556,7 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                   return (
                     <div key={idx} className="subject-progress-row">
                       <div className="subject-progress-header">
-                        <strong style={{ color: sb.color || "#aa3bff" }}>
+                        <strong style={{ color: sb.color || "inherit" }}>
                           {sb.subjectName}
                         </strong>
                         <span>
@@ -532,7 +568,7 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                           className="subject-bar-fill"
                           style={{
                             width: `${pct}%`,
-                            backgroundColor: sb.color || "#aa3bff",
+                            backgroundColor: sb.color || "#3B82F6",
                           }}
                         ></div>
                       </div>
@@ -545,9 +581,9 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
 
           {/* Recent Focus Session Logs */}
           <div className="card session-history-card">
-            <h3>📜 Recent Study Log</h3>
+            <h3>Recent Study Log</h3>
             {loadingStats ? (
-              <p>Loading history...</p>
+              <div className="loading-box">Loading history...</div>
             ) : sessionHistory.length === 0 ? (
               <p className="empty-hint">No sessions logged yet.</p>
             ) : (
@@ -561,7 +597,7 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                     <div key={s._id} className="session-log-item">
                       <div className="session-log-left">
                         <span className="session-log-duration">
-                          ⚡ {s.duration} mins
+                          {s.duration} mins
                         </span>
                         <div className="session-log-details">
                           <strong>
@@ -575,11 +611,11 @@ export default function StudyEngine({ token, apiBase, onError, onFeedback }) {
                       </div>
 
                       <button
-                        className="session-delete-btn"
+                        className="event-delete-btn"
                         title="Delete session"
                         onClick={() => handleDeleteSession(s._id)}
                       >
-                        🗑️
+                        <TrashIcon size={14} />
                       </button>
                     </div>
                   );

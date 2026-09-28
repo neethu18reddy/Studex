@@ -33,6 +33,7 @@ const createTask = asyncHandler(async (req, res) => {
     deadline,
     status,
     estimatedDuration,
+    isStarred,
   } = req.body;
 
   // If subject specified, ensure user owns the subject
@@ -57,6 +58,7 @@ const createTask = asyncHandler(async (req, res) => {
     deadline: deadline ? new Date(deadline) : null,
     status: status || "todo",
     estimatedDuration: estimatedDuration !== undefined ? Number(estimatedDuration) : 30,
+    isStarred: Boolean(isStarred),
     user: req.user._id,
     completedAt: status === "completed" ? new Date() : null,
   });
@@ -202,6 +204,7 @@ const updateTask = asyncHandler(async (req, res) => {
     deadline,
     status,
     estimatedDuration,
+    isStarred,
   } = req.body;
 
   if (subject !== undefined) {
@@ -227,6 +230,7 @@ const updateTask = asyncHandler(async (req, res) => {
   if (priority !== undefined) task.priority = priority;
   if (estimatedDuration !== undefined) task.estimatedDuration = Number(estimatedDuration);
   if (deadline !== undefined) task.deadline = deadline ? new Date(deadline) : null;
+  if (isStarred !== undefined) task.isStarred = Boolean(isStarred);
 
   if (status !== undefined) {
     task.status = status;

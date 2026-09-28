@@ -15,6 +15,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const studySessionRoutes = require("./routes/studySessionRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const streakRoutes = require("./routes/streakRoutes");
+const calendarRoutes = require("./routes/calendarRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -66,6 +67,14 @@ app.get("/", (req, res) => {
         update: "PATCH /api/tasks/:id (Protected)",
         delete: "DELETE /api/tasks/:id (Protected)",
       },
+      calendar: {
+        getAll: "GET /api/calendar (Protected, ?month=&importantOnly=&startDate=&endDate=)",
+        getUpcoming: "GET /api/calendar/upcoming (Protected)",
+        create: "POST /api/calendar (Protected)",
+        update: "PATCH /api/calendar/:id (Protected)",
+        toggleImportant: "PATCH /api/calendar/:id/toggle-important (Protected)",
+        delete: "DELETE /api/calendar/:id (Protected)",
+      },
       studySessions: {
         getAll: "GET /api/study-sessions (Protected, ?subjectId=&limit=)",
         getStats: "GET /api/study-sessions/stats (Protected)",
@@ -100,6 +109,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/calendar", calendarRoutes);
 app.use("/api/study-sessions", studySessionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/streaks", streakRoutes);
