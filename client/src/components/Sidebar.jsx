@@ -1,6 +1,7 @@
 import React from "react";
 import {
   HomeIcon,
+  SparklesIcon,
   PinIcon,
   PlusIcon,
   ClockIcon,
@@ -8,6 +9,7 @@ import {
   CalendarIcon,
   BellIcon,
   UserIcon,
+  UsersIcon,
   SunIcon,
   MoonIcon,
   LogoutIcon,
@@ -40,6 +42,22 @@ export default function Sidebar({
       tooltip: "Home Dashboard",
       onClick: () => onSelectTab("home"),
       isActive: activeTab === "home",
+    },
+    {
+      id: "ai",
+      icon: <SparklesIcon size={20} />,
+      label: "Studex AI Planner",
+      tooltip: "Studex AI Study Planner & Assistant",
+      onClick: () => onSelectTab("ai"),
+      isActive: activeTab === "ai",
+    },
+    {
+      id: "spaces",
+      icon: <UsersIcon size={20} />,
+      label: "Studex Spaces",
+      tooltip: "Studex Spaces & Collaborative Groups",
+      onClick: () => onSelectTab("spaces"),
+      isActive: activeTab === "spaces",
     },
     {
       id: "add-resource",

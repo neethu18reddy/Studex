@@ -1,3 +1,4 @@
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -6,6 +7,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const { connectDb, isDbConnected } = require("./config/db");
+const { initSocketServer } = require("./socket/socketServer");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
@@ -16,9 +18,16 @@ const studySessionRoutes = require("./routes/studySessionRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const streakRoutes = require("./routes/streakRoutes");
 const calendarRoutes = require("./routes/calendarRoutes");
+const aiRoutes = require("./routes/aiRoutes");
+const spaceRoutes = require("./routes/spaceRoutes");
+const directMessageRoutes = require("./routes/directMessageRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io real-time engine
+initSocketServer(server);
 
 // Global Middleware
 app.use(
@@ -36,59 +45,8 @@ app.get("/", (req, res) => {
     name: "Studex API",
     version: "1.0.0",
     description: "API for Studex Academic Workspace & Student Platform",
+    realtime: "Socket.io active (presence, messaging, typing, notifications, task updates)",
     architecture: "Route -> Middleware -> Controller -> Model -> Database",
-    endpoints: {
-      health: "/api/health",
-      auth: {
-        register: "POST /api/auth/register",
-        login: "POST /api/auth/login",
-        me: "GET /api/auth/me (Protected)",
-      },
-      users: {
-        getProfile: "GET /api/users/me (Protected)",
-        updateProfile: "PUT /api/users/me (Protected)",
-        uploadProfilePicture: "POST /api/users/profile-image (Protected, multipart/form-data)",
-      },
-      subjects: {
-        getAll: "GET /api/subjects (Protected)",
-        create: "POST /api/subjects (Protected)",
-        delete: "DELETE /api/subjects/:id (Protected)",
-      },
-      resources: {
-        getAll: "GET /api/resources (Protected, ?subject=&type=&search=)",
-        create: "POST /api/resources (Protected, multipart/form-data or link)",
-        delete: "DELETE /api/resources/:id (Protected)",
-      },
-      tasks: {
-        getAll: "GET /api/tasks (Protected, ?status=&priority=&subject=&search=)",
-        getToday: "GET /api/tasks/today (Protected)",
-        getUpcoming: "GET /api/tasks/upcoming (Protected)",
-        create: "POST /api/tasks (Protected)",
-        update: "PATCH /api/tasks/:id (Protected)",
-        delete: "DELETE /api/tasks/:id (Protected)",
-      },
-      calendar: {
-        getAll: "GET /api/calendar (Protected, ?month=&importantOnly=&startDate=&endDate=)",
-        getUpcoming: "GET /api/calendar/upcoming (Protected)",
-        create: "POST /api/calendar (Protected)",
-        update: "PATCH /api/calendar/:id (Protected)",
-        toggleImportant: "PATCH /api/calendar/:id/toggle-important (Protected)",
-        delete: "DELETE /api/calendar/:id (Protected)",
-      },
-      studySessions: {
-        getAll: "GET /api/study-sessions (Protected, ?subjectId=&limit=)",
-        getStats: "GET /api/study-sessions/stats (Protected)",
-        record: "POST /api/study-sessions (Protected)",
-        delete: "DELETE /api/study-sessions/:id (Protected)",
-      },
-      courses: {
-        getAll: "GET /api/courses",
-        getById: "GET /api/courses/:id",
-        create: "POST /api/courses (Protected)",
-        update: "PUT /api/courses/:id (Protected)",
-        delete: "DELETE /api/courses/:id (Protected)",
-      },
-    },
   });
 });
 
@@ -100,6 +58,7 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: `${Math.floor(process.uptime())}s`,
     database: isDbConnected() ? "connected" : "disconnected",
+    realtime: "Socket.io enabled",
   });
 });
 
@@ -114,6 +73,9 @@ app.use("/api/study-sessions", studySessionRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/streaks", streakRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/spaces", spaceRoutes);
+app.use("/api/dm", directMessageRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
@@ -125,13 +87,19 @@ const startServer = () => {
   // Connect to DB asynchronously so HTTP routes respond immediately
   connectDb();
 
-  return app.listen(PORT, () => {
-    console.log(`🚀 Studex Server running on http://localhost:${PORT}`);
+  server.listen(PORT, () => {
+    console.log(`🚀 Studex Server (with Socket.io) running on http://localhost:${PORT}`);
   });
+
+  // Keep event loop active
+  const keepAlive = setInterval(() => {}, 60000);
+  server.on("close", () => clearInterval(keepAlive));
+
+  return server;
 };
 
 if (require.main === module) {
   startServer();
 }
 
-module.exports = app;
+module.exports = { app, server };

@@ -19,6 +19,8 @@ const generateToken = (id) => {
   });
 };
 
+const { isDbConnected } = require("../config/db");
+
 /**
  * @desc    Register a new user
  * @route   POST /api/auth/register
@@ -26,6 +28,13 @@ const generateToken = (id) => {
  */
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, gender, college, school, course, year, subjects } = req.body;
+
+  if (!isDbConnected()) {
+    return res.status(503).json({
+      success: false,
+      message: "Database connection is currently unavailable. Please ensure your IP address is whitelisted in MongoDB Atlas Network Access.",
+    });
+  }
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -114,6 +123,13 @@ const registerUser = asyncHandler(async (req, res) => {
  */
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+
+  if (!isDbConnected()) {
+    return res.status(503).json({
+      success: false,
+      message: "Database connection is currently unavailable. Please ensure your IP address is whitelisted in MongoDB Atlas Network Access (or add 0.0.0.0/0).",
+    });
+  }
 
   // Check for user
   const user = await User.findOne({ email });

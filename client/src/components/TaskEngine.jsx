@@ -372,6 +372,12 @@ export default function TaskEngine({
 
                 <div className="task-meta-footer">
                   <div className="task-meta-tags">
+                    {task.isGroupTask && (
+                      <span className="task-group-badge" title="Synced from Space">
+                        👥 Space: {task.spaceName || "Group Space"}
+                      </span>
+                    )}
+
                     {task.subject && (
                       <span
                         className="task-subject-tag"

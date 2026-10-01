@@ -55,6 +55,25 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Personal <-> Group Integration Fields
+    isGroupTask: {
+      type: Boolean,
+      default: false,
+    },
+    sourceSpace: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Space",
+      default: null,
+    },
+    sourceSpaceTask: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SpaceTask",
+      default: null,
+    },
+    spaceName: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,

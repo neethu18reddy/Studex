@@ -15,7 +15,12 @@ import StarredTasksModal from "./components/StarredTasksModal";
 import QuickAddResourceModal from "./components/QuickAddResourceModal";
 import QuickFocusSessionModal from "./components/QuickFocusSessionModal";
 import NavbarProfileDropdown from "./components/NavbarProfileDropdown";
-import { BookOpenIcon, TasksIcon, ClockIcon, TrophyIcon, AnalyticsIcon } from "./components/Icons";
+import StudexAIEngine from "./components/StudexAIEngine";
+import SpacesEngine from "./components/SpacesEngine";
+import RealTimeChatDrawer from "./components/RealTimeChatDrawer";
+import RealTimeNotificationToast from "./components/RealTimeNotificationToast";
+import { initSocket, disconnectSocket } from "./services/socket";
+import { BookOpenIcon, TasksIcon, ClockIcon, TrophyIcon, AnalyticsIcon, SparklesIcon, UsersIcon } from "./components/Icons";
 
 const API_BASE = "http://localhost:5000";
 
@@ -127,8 +132,10 @@ function App() {
     checkHealth();
     if (token) {
       fetchUserProfile(token);
+      initSocket(API_BASE, token);
     } else {
       setAuthChecking(false);
+      disconnectSocket();
     }
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
@@ -357,7 +364,29 @@ function App() {
                 <span className="nav-feature-label">Analytics & Progress</span>
               </button>
 
-              {/* 6. Profile Avatar Only (No text name next to it) */}
+              {/* 6. Studex AI Assistant & Study Planner */}
+              <button
+                type="button"
+                className={`navbar-feature-link ai-nav-link ${activeTab === "ai" ? "active" : ""}`}
+                onClick={() => setActiveTab("ai")}
+                title="Studex AI (Context-Aware Study Planner & Academic Assistant)"
+              >
+                <span className="nav-feature-icon"><SparklesIcon size={16} /></span>
+                <span className="nav-feature-label">Studex AI ✨</span>
+              </button>
+
+              {/* 7. Spaces & Collaborative Groups */}
+              <button
+                type="button"
+                className={`navbar-feature-link ${activeTab === "spaces" ? "active" : ""}`}
+                onClick={() => setActiveTab("spaces")}
+                title="Studex Spaces (Study Groups, Teams & Classes)"
+              >
+                <span className="nav-feature-icon"><UsersIcon size={16} /></span>
+                <span className="nav-feature-label">Spaces</span>
+              </button>
+
+              {/* 7. Profile Avatar Only (No text name next to it) */}
               <div className="navbar-profile-wrapper">
                 <button
                   type="button"
@@ -400,44 +429,73 @@ function App() {
           </div>
         )}
 
-        {/* 1. If NOT logged in: First thing displayed is Authentication Gateway */}
+        {/* 1. If NOT logged in: Gorgeous Modern Authentication & Platform Gateway */}
         {!currentUser ? (
-          <div className="auth-gateway-container">
+          <div className="auth-gateway-container animate-fade-in">
             <div className="auth-gateway-hero">
-              <div className="gateway-badge">🔐 Student Authentication Required</div>
-              <h2>Sign in to access your Studex Academic Workspace</h2>
-              <p>
-                Organize your subjects, upload PDFs, diagrams, and lecture slides,
-                manage homework resources, and collaborate with your peers.
+              <div className="gateway-kicker-pill">
+                <span className="kicker-sparkle">✨</span> Welcome to Studex Academic Platform
+              </div>
+              <h2 className="gateway-hero-title">
+                Master Your Semesters with an <span className="highlight-ai">Intelligent Workspace</span>
+              </h2>
+              <p className="gateway-hero-desc">
+                Everything you need to excel in university &mdash; organized subject hubs, high-speed cloud notes, Pomodoro focus tracking, deadline calendars, and context-aware AI study planning.
               </p>
 
-              <div className="gateway-features">
-                <div className="feature-item">
-                  <span className="feature-icon">📚</span>
-                  <div>
-                    <strong>Subjects & Multi-Format Resources</strong>
-                    <p>Store PDFs, images, docs, and links neatly categorized by subject.</p>
+              <div className="gateway-features-grid">
+                <div className="gateway-feature-card">
+                  <div className="gateway-feature-icon-wrap blue">📚</div>
+                  <div className="gateway-feature-text">
+                    <strong>Academic Workspace</strong>
+                    <p>Organize lecture slides, PDFs, notes, and study links by subject.</p>
                   </div>
                 </div>
-                <div className="feature-item">
-                  <span className="feature-icon">☁️</span>
-                  <div>
-                    <strong>Cloudinary Cloud Storage</strong>
-                    <p>High-speed cloud delivery for student study materials and profile pictures.</p>
+
+                <div className="gateway-feature-card">
+                  <div className="gateway-feature-icon-wrap purple">✨</div>
+                  <div className="gateway-feature-text">
+                    <strong>Studex AI Planner</strong>
+                    <p>Generate personalized time-blocked study schedules based on live deadlines.</p>
                   </div>
                 </div>
-                <div className="feature-item">
-                  <span className="feature-icon">🎓</span>
-                  <div>
-                    <strong>Student Profile</strong>
-                    <p>Track College, Year, Major, and enrolled subjects.</p>
+
+                <div className="gateway-feature-card">
+                  <div className="gateway-feature-icon-wrap amber">⏱️</div>
+                  <div className="gateway-feature-text">
+                    <strong>Focus Study Engine</strong>
+                    <p>Track Pomodoro focus sessions and build unbreakable study streaks.</p>
                   </div>
                 </div>
+
+                <div className="gateway-feature-card">
+                  <div className="gateway-feature-icon-wrap green">📅</div>
+                  <div className="gateway-feature-text">
+                    <strong>Planner & Calendar</strong>
+                    <p>Track upcoming exam dates, homework deadlines, and milestones.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="gateway-trust-row">
+                <span className="trust-item">🔒 Secure Student Auth</span>
+                <span className="trust-dot">&bull;</span>
+                <span className="trust-item">☁️ Cloudinary Storage</span>
+                <span className="trust-dot">&bull;</span>
+                <span className="trust-item">🧠 Gemini AI Powered</span>
               </div>
             </div>
 
             {/* Main Auth Form Card */}
             <div className="card auth-gateway-card">
+              <div className="auth-card-header">
+                <div className="auth-brand-badge">SX</div>
+                <div className="auth-header-text">
+                  <h3>{authMode === "login" ? "Welcome Back!" : "Join Studex"}</h3>
+                  <p>{authMode === "login" ? "Enter your credentials to access your workspace" : "Create your student profile and get started"}</p>
+                </div>
+              </div>
+
               <div className="auth-tab-switch">
                 <button
                   type="button"
@@ -457,7 +515,7 @@ function App() {
                     setAuthError("");
                   }}
                 >
-                  Sign Up (New Student)
+                  Register Account
                 </button>
               </div>
 
@@ -717,6 +775,37 @@ function App() {
                 />
               </div>
             )}
+
+            {/* Tab 6: Studex AI Assistant & Study Planner */}
+            {activeTab === "ai" && (
+              <div key="ai" className="tab-content-pane animate-slide-up">
+                <StudexAIEngine
+                  token={token}
+                  apiBase={API_BASE}
+                  currentUser={currentUser}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onStartFocusSession={() => {
+                    setActiveTab("study");
+                    setShowQuickFocusModal(true);
+                  }}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
+            )}
+
+            {/* Tab 7: Phase 12 Milestone 12 — Studex Spaces & Collaborative Groups */}
+            {activeTab === "spaces" && (
+              <div key="spaces" className="tab-content-pane animate-slide-up">
+                <SpacesEngine
+                  token={token}
+                  apiBase={API_BASE}
+                  currentUser={currentUser}
+                  onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+                  onFeedback={(msg) => setActionFeedback(msg)}
+                />
+              </div>
+            )}
           </>
         )}
       </main>
@@ -789,6 +878,20 @@ function App() {
         onError={(msg) => setActionFeedback(`Error: ${msg}`)}
         onFeedback={(msg) => setActionFeedback(msg)}
       />
+
+      {/* Real-time Push Notifications Toast Banner */}
+      <RealTimeNotificationToast />
+
+      {/* Real-time Direct Chat & Peer Messenger Drawer */}
+      {token && currentUser && (
+        <RealTimeChatDrawer
+          token={token}
+          apiBase={API_BASE}
+          currentUser={currentUser}
+          onError={(msg) => setActionFeedback(`Error: ${msg}`)}
+          onFeedback={(msg) => setActionFeedback(msg)}
+        />
+      )}
       </div>
     </div>
   );

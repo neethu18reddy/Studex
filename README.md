@@ -1,8 +1,21 @@
+<div align="center">
+
 # Studex 🎓
+### Studex MERN Stack Application • Academic Workspace & Resource Platform
 
-> **A modern, full-stack MERN academic workspace, productivity engine, and student platform.**
+<p align="center">
+  <em>A modern, full-stack MERN academic workspace, productivity engine, and student platform.</em>
+</p>
 
-Studex brings together academic workspace management, multi-format resource libraries, task prioritization, focus study timers, streak gamification, and in-depth learning analytics into a sleek, claymorphic glass design system.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/Node.js-Express_5-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node Express" />
+  <img src="https://img.shields.io/badge/MongoDB-Mongoose_9-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Gemini_AI-1.5_Flash-8E75B2?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+</p>
+
+</div>
 
 ---
 
@@ -21,7 +34,30 @@ Studex brings together academic workspace management, multi-format resource libr
 
 ## ✨ Key Features
 
-### 1. 🏠 Home Command Center (`HomeDashboard`)
+### 1. 🚀 Studex Spaces & Collaborative Groups (`SpacesEngine` — Milestone 12)
+- **Multi-Tier Academic Groups**:
+  - Create spaces for **Study Groups**, **Project Teams**, **Classes/Sections**, or **Peer Circles**.
+- **Role-Based Access Control (RBAC)**:
+  - 👑 **Owner**: Full space authority, assign admin roles, manage space metadata, transfer ownership, or delete space.
+  - 🛡️ **Admin**: Invite members, remove regular members, update space profile and rules.
+  - 👤 **Member**: Participate in study sessions, view member roster, copy invite codes, and leave space.
+- **Dynamic Membership Management**:
+  - Create Space &rarr; Unique uppercase invite code (e.g. `SX-9A4B2C`).
+  - Join via Invite Code or 1-Click Public Discovery directory.
+  - Member search and direct invite by student email / UID.
+  - Member removal & role updates with authorization checks.
+
+### 2. ✨ Studex AI Assistant & Context-Aware Planner (`StudexAIEngine`)
+- **Deep Academic Context Synthesis**:
+  - Instead of a generic chatbot, Studex AI feeds the student's real-time database context (enrolled subjects, pending tasks, exam countdowns, weekly study velocity, and streak momentum) directly into Google Gemini.
+- **Personalized Time-Blocked Study Roadmaps**:
+  - Input: *"I have 3 hours tonight"* &rarr; Studex AI factorizes upcoming exams (e.g. DBMS in 2 days) and pending assignments (e.g. Networks due tomorrow) to build a concrete, prioritized, Pomodoro-blocked schedule.
+- **Conversational Academic Strategist**:
+  - Ask for habit diagnoses, study velocity checks, active recall strategies, and subject prioritization.
+- **AI Task & Exam Deconstruction**:
+  - Break down intimidating final projects or exam syllabi into 3-5 manageable micro-tasks with 1-click database saving to the Task Engine.
+
+### 2. 🏠 Home Command Center (`HomeDashboard`)
 - **Personalized Student Spotlight**: Context-aware greetings, inspiring daily study quotes, and enrolled academic tags (College, Major, Enrolled Subjects count).
 - **Weekly Momentum At a Glance**:
   - ⏱️ **Study Time**: Real-time weekly study hours vs. targets with interactive progress bars.

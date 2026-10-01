@@ -15,6 +15,7 @@ import {
   FileTextIcon,
   PinIcon,
   CalendarIcon,
+  SparklesIcon,
 } from "./Icons";
 
 export default function HomeDashboard({
@@ -375,7 +376,14 @@ export default function HomeDashboard({
         <div className="home-hero-quick-actions">
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary btn-ai-hero-cta"
+            onClick={() => onNavigateTab("ai")}
+          >
+            <SparklesIcon size={15} /> Studex AI Planner ✨
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
             onClick={() => onNavigateTab("study")}
           >
             <ClockIcon size={15} /> Focus Timer
@@ -400,6 +408,40 @@ export default function HomeDashboard({
             onClick={() => onNavigateTab("analytics")}
           >
             <AnalyticsIcon size={15} /> Analytics
+          </button>
+        </div>
+      </section>
+
+      {/* ============================================================
+          AI STUDY PLANNER SPOTLIGHT BANNER
+         ============================================================ */}
+      <section
+        className="home-ai-spotlight-card card"
+        onClick={() => onNavigateTab("ai")}
+        style={{ cursor: "pointer" }}
+        title="Open Studex AI Personalized Planner"
+      >
+        <div className="home-ai-spotlight-content">
+          <div className="home-ai-badge">
+            <SparklesIcon size={14} /> AI Study Planner
+          </div>
+          <h3 className="home-ai-spotlight-title">
+            Plan Your Next Study Session with AI
+          </h3>
+          <p className="home-ai-spotlight-desc">
+            Generate tailored time-blocked schedules and active recall roadmaps based on your enrolled subjects, pending assignments, and upcoming deadlines.
+          </p>
+        </div>
+        <div className="home-ai-spotlight-action">
+          <button
+            type="button"
+            className="btn btn-primary btn-ai-spotlight-cta"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateTab("ai");
+            }}
+          >
+            <SparklesIcon size={15} /> Generate My Plan &rarr;
           </button>
         </div>
       </section>

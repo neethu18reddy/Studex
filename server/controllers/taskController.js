@@ -243,6 +243,28 @@ const updateTask = asyncHandler(async (req, res) => {
 
   await task.save();
 
+  // Bi-directional Personal <-> Group Task Sync
+  if (task.sourceSpaceTask && status !== undefined) {
+    try {
+      const SpaceTask = require("../models/spaceTaskModel");
+      const { emitToSpace } = require("../socket/socketServer");
+      const updatedSpaceTask = await SpaceTask.findByIdAndUpdate(
+        task.sourceSpaceTask,
+        {
+          status: task.status,
+          completedAt: task.completedAt,
+        },
+        { new: true }
+      )
+        .populate("assignedTo", "name email profilePicture college")
+        .populate("creator", "name email profilePicture");
+
+      if (task.sourceSpace && updatedSpaceTask) {
+        emitToSpace(task.sourceSpace, "space:task_updated", updatedSpaceTask);
+      }
+    } catch {}
+  }
+
   const populatedTask = await Task.findById(task._id).populate(
     "subject",
     "name code color"

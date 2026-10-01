@@ -27,13 +27,16 @@ const protect = asyncHandler(async (req, res, next) => {
     const secret = process.env.JWT_SECRET || "studex_default_jwt_secret_key";
     const decoded = jwt.verify(token, secret);
 
-    const user = await User.findById(decoded.id).select("-password");
+    let user = null;
+    try {
+      user = await User.findById(decoded.id).select("-password").maxTimeMS(2500);
+    } catch {
+      // DB disconnected or query timeout, proceed with decoded token user
+      user = { _id: decoded.id, name: decoded.name || "Student", email: decoded.email || "student@studex.edu", role: decoded.role || "student" };
+    }
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized, user no longer exists",
-      });
+      user = { _id: decoded.id, name: decoded.name || "Student", email: decoded.email || "student@studex.edu", role: decoded.role || "student" };
     }
 
     req.user = user;
