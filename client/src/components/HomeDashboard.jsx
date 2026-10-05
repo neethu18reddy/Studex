@@ -17,6 +17,11 @@ import {
   CalendarIcon,
   SparklesIcon,
 } from "./Icons";
+import {
+  playTimerCompletionChime,
+  sendFocusNotification,
+  requestNotificationPermission,
+} from "../services/sound";
 
 export default function HomeDashboard({
   token,
@@ -54,6 +59,7 @@ export default function HomeDashboard({
   const [timerStartTime, setTimerStartTime] = useState(null);
   const [savingSession, setSavingSession] = useState(false);
   const timerRef = useRef(null);
+  const targetEndTimeRef = useRef(null);
 
   // Dynamic Greeting based on time of day
   const getGreeting = () => {
@@ -147,63 +153,23 @@ export default function HomeDashboard({
     loadDashboardData();
   }, [loadDashboardData]);
 
-  // Mini Timer Tick Effect
+  // Update browser tab title with active countdown
   useEffect(() => {
     if (isTimerActive && !isTimerPaused) {
-      timerRef.current = setInterval(() => {
-        setSecondsLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            handleAutoFinishSession();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      const m = Math.floor(secondsLeft / 60);
+      const s = secondsLeft % 60;
+      const fmt = `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+      document.title = `(${fmt}) Focus - Studex`;
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      document.title = "Studex - Ultimate Student Workspace";
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      document.title = "Studex - Ultimate Student Workspace";
     };
-  }, [isTimerActive, isTimerPaused]);
+  }, [isTimerActive, isTimerPaused, secondsLeft]);
 
-  // Start Quick Timer
-  const handleStartTimer = () => {
-    setIsTimerActive(true);
-    setIsTimerPaused(false);
-    if (!timerStartTime) setTimerStartTime(new Date());
-    onFeedback?.("Focus session active! Deep work in progress. 🧠");
-  };
-
-  // Pause Timer
-  const handlePauseTimer = () => setIsTimerPaused(true);
-
-  // Resume Timer
-  const handleResumeTimer = () => setIsTimerPaused(false);
-
-  // Reset Timer
-  const handleResetTimer = () => {
-    setIsTimerActive(false);
-    setIsTimerPaused(false);
-    setSecondsLeft(timerMinutes * 60);
-    setTimerStartTime(null);
-  };
-
-  // Set Duration Preset
-  const handleSetPreset = (mins) => {
-    if (isTimerActive && !window.confirm("Change timer duration? Active session will reset.")) {
-      return;
-    }
-    setIsTimerActive(false);
-    setIsTimerPaused(false);
-    setTimerMinutes(mins);
-    setSecondsLeft(mins * 60);
-    setTimerStartTime(null);
-  };
-
-  // Save Session
+  // Save Session to MongoDB
   const handleSaveSession = async (actualDurationMins) => {
     setSavingSession(true);
     const end = new Date();
@@ -239,6 +205,93 @@ export default function HomeDashboard({
     } finally {
       setSavingSession(false);
     }
+  };
+
+  // Mini Timer Tick Effect (Timestamp-based so switching apps/tabs never lags)
+  useEffect(() => {
+    if (!isTimerActive || isTimerPaused) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    const syncTimer = () => {
+      if (!targetEndTimeRef.current) return;
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((targetEndTimeRef.current - now) / 1000));
+      setSecondsLeft(remaining);
+
+      if (remaining <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        targetEndTimeRef.current = null;
+        setIsTimerActive(false);
+        setIsTimerPaused(false);
+        playTimerCompletionChime();
+        sendFocusNotification("🎉 Focus Session Completed!", `Great job! You finished your ${timerMinutes} minute focus session.`);
+        handleSaveSession(timerMinutes);
+      }
+    };
+
+    timerRef.current = setInterval(syncTimer, 500);
+
+    // Sync immediately when window/tab is focused or visibility changes
+    document.addEventListener("visibilitychange", syncTimer);
+    window.addEventListener("focus", syncTimer);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      document.removeEventListener("visibilitychange", syncTimer);
+      window.removeEventListener("focus", syncTimer);
+    };
+  }, [isTimerActive, isTimerPaused, timerMinutes]);
+
+  // Start Quick Timer
+  const handleStartTimer = () => {
+    requestNotificationPermission();
+    const endTime = Date.now() + secondsLeft * 1000;
+    targetEndTimeRef.current = endTime;
+    setIsTimerActive(true);
+    setIsTimerPaused(false);
+    if (!timerStartTime) setTimerStartTime(new Date());
+    onFeedback?.("Focus session active! Deep work in progress. 🧠");
+  };
+
+  // Pause Timer
+  const handlePauseTimer = () => {
+    if (targetEndTimeRef.current) {
+      const rem = Math.max(0, Math.ceil((targetEndTimeRef.current - Date.now()) / 1000));
+      setSecondsLeft(rem);
+    }
+    targetEndTimeRef.current = null;
+    setIsTimerPaused(true);
+  };
+
+  // Resume Timer
+  const handleResumeTimer = () => {
+    const endTime = Date.now() + secondsLeft * 1000;
+    targetEndTimeRef.current = endTime;
+    setIsTimerPaused(false);
+  };
+
+  // Reset Timer
+  const handleResetTimer = () => {
+    targetEndTimeRef.current = null;
+    setIsTimerActive(false);
+    setIsTimerPaused(false);
+    setSecondsLeft(timerMinutes * 60);
+    setTimerStartTime(null);
+  };
+
+  // Set Duration Preset
+  const handleSetPreset = (mins) => {
+    if (isTimerActive && !window.confirm("Change timer duration? Active session will reset.")) {
+      return;
+    }
+    targetEndTimeRef.current = null;
+    setIsTimerActive(false);
+    setIsTimerPaused(false);
+    setTimerMinutes(mins);
+    setSecondsLeft(mins * 60);
+    setTimerStartTime(null);
   };
 
   const handleAutoFinishSession = () => handleSaveSession(timerMinutes);

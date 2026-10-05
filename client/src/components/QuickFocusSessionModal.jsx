@@ -8,6 +8,11 @@ import {
   XIcon,
   BookOpenIcon,
 } from "./Icons";
+import {
+  playTimerCompletionChime,
+  sendFocusNotification,
+  requestNotificationPermission,
+} from "../services/sound";
 
 export default function QuickFocusSessionModal({
   isOpen,
@@ -34,6 +39,7 @@ export default function QuickFocusSessionModal({
   const [savingSession, setSavingSession] = useState(false);
 
   const timerRef = useRef(null);
+  const targetEndTimeRef = useRef(null);
 
   // Fetch subjects for dropdown selector
   useEffect(() => {
@@ -52,6 +58,59 @@ export default function QuickFocusSessionModal({
       .finally(() => setLoadingSubjects(false));
   }, [token, isOpen, apiBase]);
 
+  // Update browser tab title with active countdown
+  useEffect(() => {
+    if (isOpen && isActive && !isPaused) {
+      const m = Math.floor(secondsLeft / 60);
+      const s = secondsLeft % 60;
+      const fmt = `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+      document.title = `(${fmt}) Focus - Studex`;
+    } else if (isOpen) {
+      document.title = "Studex - Ultimate Student Workspace";
+    }
+
+    return () => {
+      document.title = "Studex - Ultimate Student Workspace";
+    };
+  }, [isOpen, isActive, isPaused, secondsLeft]);
+
+  // Timer interval tick & Background Sync Effect (Timestamp-based so switching apps/tabs never lags)
+  useEffect(() => {
+    if (!isOpen || !isActive || isPaused) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    const syncTimer = () => {
+      if (!targetEndTimeRef.current) return;
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((targetEndTimeRef.current - now) / 1000));
+      setSecondsLeft(remaining);
+
+      if (remaining <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        targetEndTimeRef.current = null;
+        setIsActive(false);
+        setIsPaused(false);
+        playTimerCompletionChime();
+        sendFocusNotification("🎉 Focus Session Completed!", `Great job! You finished your ${timerMinutes} minute focus session.`);
+        handleAutoFinish();
+      }
+    };
+
+    timerRef.current = setInterval(syncTimer, 500);
+
+    // Sync immediately when window/tab is focused or visibility changes
+    document.addEventListener("visibilitychange", syncTimer);
+    window.addEventListener("focus", syncTimer);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      document.removeEventListener("visibilitychange", syncTimer);
+      window.removeEventListener("focus", syncTimer);
+    };
+  }, [isOpen, isActive, isPaused, timerMinutes]);
+
   // Handle auto finishing when countdown hits 0
   const handleAutoFinish = async () => {
     setIsActive(false);
@@ -60,35 +119,12 @@ export default function QuickFocusSessionModal({
     await handleSaveSession(timerMinutes);
   };
 
-  // Timer interval tick
-  useEffect(() => {
-    if (isActive && !isPaused) {
-      timerRef.current = setInterval(() => {
-        setSecondsLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            handleAutoFinish();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isActive, isPaused]);
-
-  if (!isOpen) return null;
-
   // Preset Selection
   const handleSelectPreset = (mins) => {
     if (isActive && !window.confirm("Changing duration will reset the active session. Continue?")) {
       return;
     }
+    targetEndTimeRef.current = null;
     setIsActive(false);
     setIsPaused(false);
     setIsCustomMode(false);
@@ -104,6 +140,7 @@ export default function QuickFocusSessionModal({
       onError?.("Please enter a duration between 1 and 360 minutes");
       return;
     }
+    targetEndTimeRef.current = null;
     setIsActive(false);
     setIsPaused(false);
     setIsCustomMode(true);
@@ -114,6 +151,9 @@ export default function QuickFocusSessionModal({
 
   // Start Timer
   const handleStartTimer = () => {
+    requestNotificationPermission();
+    const endTime = Date.now() + secondsLeft * 1000;
+    targetEndTimeRef.current = endTime;
     setIsActive(true);
     setIsPaused(false);
     if (!startTime) {
@@ -124,16 +164,24 @@ export default function QuickFocusSessionModal({
 
   // Pause Timer
   const handlePauseTimer = () => {
+    if (targetEndTimeRef.current) {
+      const rem = Math.max(0, Math.ceil((targetEndTimeRef.current - Date.now()) / 1000));
+      setSecondsLeft(rem);
+    }
+    targetEndTimeRef.current = null;
     setIsPaused(true);
   };
 
   // Resume Timer
   const handleResumeTimer = () => {
+    const endTime = Date.now() + secondsLeft * 1000;
+    targetEndTimeRef.current = endTime;
     setIsPaused(false);
   };
 
   // Reset Timer
   const handleResetTimer = () => {
+    targetEndTimeRef.current = null;
     setIsActive(false);
     setIsPaused(false);
     setSecondsLeft(timerMinutes * 60);
@@ -191,6 +239,8 @@ export default function QuickFocusSessionModal({
     const s = secs % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
